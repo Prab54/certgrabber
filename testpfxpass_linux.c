@@ -1,5 +1,5 @@
-// Compile: gcc testpfxpass.c -o verifypfx -lcrypto -std=c99
-// Run:  ./verifypfx dls/2023_senha122015.pfx /usr/share/wordlists/fasttrack.txt
+// Compile: gcc testpfxpass_linux.c -o verifypfxlinux -lcrypto -std=c99
+// Run:  ./verifypfxlinux dls/2023_senha122015.pfx common_roots.txt
 
 #include <stdio.h>
 #include <errno.h>
@@ -74,6 +74,14 @@ int main(int argc, char *argv[])
         return 0;
 }
 
+
+char *my_strdup(const char *s) {
+    char *new = malloc(strlen(s) + 1);
+    if (new) {
+        strcpy(new, s);
+    }
+    return new;
+}
 
 /* read all words 1 per-line, from 'fp', return
  * pointer-to-pointers of allocated strings on 
