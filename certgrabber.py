@@ -3,13 +3,12 @@ import json
 import os
 import random
 import pprint
-import hashlib
 
 def download_file(filename, url):
   """
   Download an URL to a file
   """
-  print("Downloading " + url + "\nSaving to" + filename)
+  print("Downloading " + url + "\nSaving to\t" + filename)
   try:
     with open(filename, 'wb') as fout:
       response = requests.get(url, stream=True)
@@ -19,19 +18,11 @@ def download_file(filename, url):
         fout.write(block)
     print("Downloaded: " + url)
     
-    # Calculate hash of file
-    with open(filename, 'rb') as fin:
-      data = fin.read()
-      file_hash = hashlib.sha256(data).hexdigest()
-
-    # Rename file to hash
-    os.rename(filename, file_hash)
-
-    print("File renamed to: " + file_hash)
-
     return True
+
   except Exception as e:
     print(url + " failed download")
+    os.remove(filename)
     return False
 
 
@@ -59,7 +50,7 @@ class certApiSearch:
     self.api_key = api_key
     self.search_terms_dict = search_terms_dict
     self.search_defaults = {
-      "limit" : "3",
+      "limit" : "300",
       "full-path" : "0"
     }
     self.get_query = self.BASE_URL + "?"
