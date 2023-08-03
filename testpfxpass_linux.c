@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define listlength 4756
+#define listlength 14400000
 #define wordslength 21
 
 char **getwords (FILE *fp, int *n);
@@ -62,7 +62,9 @@ int main(int argc, char *argv[])
                 {
                         printf("PKCS12 password matches: Password = %s\n",words[i]);
                         i = listlength;
-                }   
+                }   else if (i % 1000000 ==0) {
+                    printf("PROGRESS");
+                }
         }
 
 
