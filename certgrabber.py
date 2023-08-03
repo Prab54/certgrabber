@@ -3,6 +3,7 @@ import json
 import os
 import random
 import pprint
+import hashlib
 
 def download_file(filename, url):
   """
@@ -17,6 +18,17 @@ def download_file(filename, url):
       for block in response.iter_content(4096):
         fout.write(block)
     print("Downloaded: " + url)
+    
+    # Calculate hash of file
+    with open(filename, 'rb') as fin:
+      data = fin.read()
+      file_hash = hashlib.sha256(data).hexdigest()
+
+    # Rename file to hash
+    os.rename(filename, file_hash)
+
+    print("File renamed to: " + file_hash)
+
     return True
   except Exception as e:
     print(url + " failed download")
