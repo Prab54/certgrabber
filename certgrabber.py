@@ -92,7 +92,7 @@ directory = "dls/"
 # If download directory doesnt exist, create
 isExist = os.path.exists(directory)
 if not isExist:
-  os.makedirs(path)
+  os.makedirs(directory)
   print("Directory " + directory + " created")
 
 api_key = 'e'
