@@ -95,7 +95,8 @@ if not isExist:
   os.makedirs(directory)
   print("Directory " + directory + " created")
 
-api_key = os.environ['API_KEY_GREY']
+api_key = os.environ.get('API_KEY_GREY')
+
 search_terms_dict = {
   "extensions" : "pfx",
   "keywords" : ""
