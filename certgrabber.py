@@ -5,11 +5,16 @@ import json
 import threading
 import subprocess
 
+global_cracks = []
+
 
 def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
     print(f"\n\nAttempting to crack {filepath}.\n")
-    subprocess.run([verifypfx_path, filepath, common_roots_file])
+    result = subprocess.run([verifypfx_path, filepath, common_roots_file], stdout=subprocess.PIPE, text=True)
     print(f"\nFile {filepath} processed.\n\n")
+    if result.stdout.strip():
+        global_cracks.append((filepath, result.stdout.strip()))
+
 
 
 def download_file(filename, url):
@@ -164,6 +169,7 @@ def main():
         thread.join()
 
     print("All tasks completed.")
+    print('\n\n\n', global_cracks)
 
 
 ### MAIN ### 

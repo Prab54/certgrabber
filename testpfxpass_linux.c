@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
         for(i = 0; i < listlength; i++) { 
                 if( PKCS12_verify_mac(p12, words[i], -1) )
                 {
-                        printf("%s PKCS12 password matches: Password = %s\n",argv[1],words[i]);
+                        printf("%s",words[i]);
                         i = listlength;
                 }
         }
