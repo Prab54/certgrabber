@@ -123,6 +123,10 @@ def main():
 
     # Maintain a set to keep track of hashes
     hashes = set()
+    # Add any files that already exist
+    for (apth, aname, afile) in os.walk(directory):
+        for item in afile:
+            hashes.add(item)
 
     for filename, url in catalogue.items():
         print("Should I download: " + url)
