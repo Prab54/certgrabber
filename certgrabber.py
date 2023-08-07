@@ -168,8 +168,9 @@ def main():
     for thread in threads:
         thread.join()
 
-    print("All tasks completed.")
-    print('\n\n\n', global_cracks)
+    print("All tasks completed.\n\n")
+    for item in global_cracks:
+        print('\n', item[0], '\t', item[1])
 
 
 ### MAIN ### 
