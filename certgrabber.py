@@ -67,7 +67,7 @@ class certApiSearch:
         self.api_key = api_key
         self.search_terms_dict = search_terms_dict
         self.search_defaults = {
-          "limit" : "500",
+          "limit" : "50",
           "full-path" : "0"
         }
         self.get_query = self.BASE_URL + "?"
