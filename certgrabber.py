@@ -4,6 +4,7 @@ import requests
 import json
 import threading
 import subprocess
+from datetime import datetime
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
@@ -13,9 +14,9 @@ verified_hashes = []
 
 
 def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
-    print(f"\n\nAttempting to crack {filepath}.\n")
+    print(f"Attempting to crack {filepath}.")
     result = subprocess.run([verifypfx_path, filepath, common_roots_file], stdout=subprocess.PIPE, text=True)
-    print(f"\nFile {filepath} processed.\n\n")
+    print(f"File {filepath} processed.")
     if result.stdout.strip():
         cracked_hashes.append((filepath, result.stdout.strip()))
 
@@ -71,7 +72,7 @@ class certApiSearch:
         self.api_key = api_key
         self.search_terms_dict = search_terms_dict
         self.search_defaults = {
-          "limit" : "15",
+          "limit" : "400",
           "full-path" : "0"
         }
         self.get_query = self.BASE_URL + "?"
@@ -104,6 +105,12 @@ class certApiSearch:
         print("Number of unique name certs = " + str(len(catalogue)))
         return catalogue
 
+
+# Check cert in date
+def is_certificate_indate(cert):
+    current_time = datetime.utcnow()
+    return cert.not_valid_before <= current_time <= cert.not_valid_after
+
 # Check the PFX file has both a private key and at least one certificate
 def check_pfx_contents(pfx_path, pfx_password):
     # Load the PFX (PKCS#12) file
@@ -111,22 +118,39 @@ def check_pfx_contents(pfx_path, pfx_password):
     with open(pfx_path, 'rb') as pfx_file:
         pfx_data = pfx_file.read()
     
-    file_password = pfx_password.encode() if not pfx_password else None
+    if pfx_password != None:
+        file_password = pfx_password.encode()
+    else:
+        file_password = None
 
     # Parse the PFX file
-    private_key, certificate, additional_certificates = load_key_and_certificates(
-        default_backend(), 
-        pfx_data, 
-        file_password
-    )
+    try:
+        private_key, certificate, additional_certificates = load_key_and_certificates(
+            pfx_data, 
+            file_password,
+            backend=default_backend()
+        )
+    except:
+        # debug
+        print("\n\t\tREADING FALIURE")
+        return False
+
 
     # Check for private key
+    print(pfx_path[4:9]+':  ',private_key)
     if not private_key:
         return False
     
     # Check for main certificate
+    print(pfx_path[4:9]+':  ',certificate)
     if not certificate:
         return False
+    
+    # Check it is in date
+    print(pfx_path[4:9]+':  ', certificate.not_valid_before, certificate.not_valid_after)
+    if not is_certificate_indate(certificate):
+        return False
+    
     
     return True
 
@@ -200,7 +224,7 @@ def main():
     for thread in threads:
         thread.join()
 
-    print(f"All tasks completed.\nCracked Hashes ({len(cracked_hashes)}):\nName\tPassword\n\n")
+    print(f"All tasks completed.\nCracked Hashes ({len(cracked_hashes)}):\n\tName\t\t\t\t\t\tPassword")
     for item in cracked_hashes:
         print('\n', item[0], '\t', item[1])
 
@@ -214,11 +238,11 @@ def main():
         else:
             pfx_password = item[1]
         if check_pfx_contents(file_hash, pfx_password):
-            verified_hashes.append((file_hash, item[0]))
+            verified_hashes.append((file_hash, item[1]))
         else:
-            print(f'\n{file_hash} is bad!')
+            print(f'{file_hash} is bad!\n')
 
-    print(f"\n\nVerified Hashes ({len(verified_hashes)}):\nName\tPassword\n\n")
+    print(f"\n\nVerified Hashes ({len(verified_hashes)}):\n\tName\t\t\t\t\t\tPassword")
     for item in verified_hashes:
         print('\n', item[0], '\t', item[1])
 
