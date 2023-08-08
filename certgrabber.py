@@ -5,7 +5,6 @@ import requests
 import json
 import threading
 import subprocess
-from datetime import datetime
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
@@ -23,46 +22,48 @@ def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
 
 
 
-def download_file(filename, url):
-    """
-    Download an URL to a file
-    """
-    print("Downloading " + url + "\nSaving to\t" + filename)
-    try:
-        with open(filename, 'wb') as fout:
-            response = requests.get(url, stream=True)
-            response.raise_for_status()
-            # Write response data to file
-            for block in response.iter_content(4096):
-                fout.write(block)
-        print("Downloaded: " + url)
-        
-        return True
 
-    except Exception as e:
-        print(url + " failed download")
-        os.remove(filename)
-        return False
+def download_file(filename, url):
+	"""
+	Download an URL to a file
+	"""
+	#print("Downloading " + url + "\nSaving to\t" + filename)
+	
+	try:
+		with open(filename, 'wb') as fout:
+			response = requests.get(url, stream=True)
+			response.raise_for_status()
+			# Write response data to file
+			for block in response.iter_content(4096):
+				fout.write(block)
+		print("Downloaded: " + url)
+		
+		return True
+
+	except Exception as e:
+		print(url + " failed download")
+		os.remove(filename)
+		return False
 
 def hash_file(filename):
-    """
-    This function returns the SHA-1 hash
-    of the file passed into it.
-    """
-    # make a hash object
-    h = hashlib.sha1()
+	"""
+	This function returns the SHA-1 hash
+	of the file passed into it.
+	"""
+	# make a hash object
+	h = hashlib.sha1()
 
-    # open file for reading in binary mode
-    with open(filename, 'rb') as file:
-        # loop till the end of the file
-        chunk = 0
-        while chunk != b'':
-            # read only 1024 bytes at a time
-            chunk = file.read(1024)
-            h.update(chunk)
+	# open file for reading in binary mode
+	with open(filename, 'rb') as file:
+		# loop till the end of the file
+		chunk = 0
+		while chunk != b'':
+			# read only 1024 bytes at a time
+			chunk = file.read(1024)
+			h.update(chunk)
 
-    # return the hex representation of digest
-    return h.hexdigest()
+	# return the hex representation of digest
+	return h.hexdigest()
 
 class certApiSearch:
     def __init__(self):
@@ -105,6 +106,7 @@ class certApiSearch:
                 catalogue.update(new_entry)
         print("Number of unique name certs = " + str(len(catalogue)))
         return catalogue
+
 
 
 # Check cert in date
@@ -257,9 +259,10 @@ def main():
     for item in verified_hashes:
         print('\n', item[0], '\t', item[1])
 
+
     print(f"\n{len(cracked_hashes)} ====>>> {len(verified_hashes)}\n")
 
 
 ### MAIN ### 
 if __name__ == '__main__':
-    main()
+	main()
