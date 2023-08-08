@@ -165,7 +165,7 @@ api_key.txt
 
 # dls
 /dls
-verifypfx*
-/certgrabber
-rockyou.txt
 /cracked_certs
+verifypfx*
+rockyou.txt
+/certgrabber
