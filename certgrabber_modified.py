@@ -8,6 +8,7 @@ import time
 from tqdm import tqdm
 
 global_cracks = []
+limit = '300'
 
 def subprocess_thread(verifypfx_path, filepath, common_roots_file):
 	result = subprocess.run([verifypfx_path, filepath, common_roots_file], stdout=subprocess.PIPE, text=True)
@@ -45,16 +46,20 @@ def download_file(filename, url):
 		with open(filename, 'wb') as fout:
 			response = requests.get(url, stream=True)
 			total_size = int(response.headers.get('content-length', 0))
-			pbar = tqdm(total=total_size, unit='B', unit_scale=True, desc=f"Downloading {filename}")
+			
+			if total_size:
+				pbar = tqdm(total=total_size, unit='B', unit_scale=True, desc=f"Downloading {filename}")
+			else:
+				pbar = tqdm(desc=f"Downloading {filename}", unit="B", unit_scale=True, leave=True)
 			
 			for block in response.iter_content(4096):
 				fout.write(block)
 				pbar.update(len(block))
-			
+				
 			pbar.close()
 			
 			# Verify if the file was completely downloaded
-			if total_size != 0 and pbar.n != total_size:
+			if total_size and pbar.n != total_size:
 				print("ERROR, something went wrong with the download.")
 				os.remove(filename)
 				return False
@@ -66,6 +71,7 @@ def download_file(filename, url):
 		if os.path.exists(filename):
 			os.remove(filename)
 		return False
+
 
 
 def hash_file(filename):
@@ -97,7 +103,7 @@ class certApiSearch:
 		self.api_key = api_key
 		self.search_terms_dict = search_terms_dict
 		self.search_defaults = {
-		  "limit" : "50",
+		  "limit" : limit,
 		  "full-path" : "0"
 		}
 		self.get_query = self.BASE_URL + "?"
