@@ -5,6 +5,7 @@ import requests
 import json
 import threading
 import subprocess
+from datetime import datetime
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
@@ -153,6 +154,19 @@ def check_pfx_contents(pfx_path, pfx_password):
     print(pfx_path[4:9]+':  ', certificate.not_valid_before, certificate.not_valid_after)
     if not is_certificate_indate(certificate):
         return False
+
+    # Check if it is issued by a trustworthy CA
+    '''
+    all_certs = additional_certificates
+    all_certs.append(certificate)
+    trusted_issuers = ["DigiCert", "GlobalSign", "Let's Encrypt", "Comodo", "GoDaddy", "Symantec", "GeoTrust", "Certum", "VeriSign", "Sectigo", "DST", "Entrust", "GTS", "Hotspot", "ISRG", "QuoVadis", "Trustwave", "SECOM", "Starfield", "StartCom", "Thawte"]
+    for cert in all_certs:
+        issuer_name = cert.issuer.rfc4514_string()
+        if any(trusted_issuer.lower() in issuer_name.lower() for trusted_issuer in trusted_issuers):
+            break
+        else:
+            continue
+    '''
     
     with open(f"cracked_certs/{pfx_path[4:9]}_report.txt", 'w') as f:
         f.write(f"Name: {pfx_path[4:]}.pfx\nPassword: {pfx_password}\n\nPrivate Key:\n{private_key}\n\nCertificate(s):\n{certificate}\n{additional_certificates}\n\nDates:\n{certificate.not_valid_before} to {certificate.not_valid_after}")
