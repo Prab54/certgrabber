@@ -5,7 +5,11 @@ import json
 import threading
 import subprocess
 
-global_cracks = []
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
+
+cracked_hashes = []
+verified_hashes = []
 
 
 def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
@@ -13,7 +17,7 @@ def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
     result = subprocess.run([verifypfx_path, filepath, common_roots_file], stdout=subprocess.PIPE, text=True)
     print(f"\nFile {filepath} processed.\n\n")
     if result.stdout.strip():
-        global_cracks.append((filepath, result.stdout.strip()))
+        cracked_hashes.append((filepath, result.stdout.strip()))
 
 
 
@@ -67,7 +71,7 @@ class certApiSearch:
         self.api_key = api_key
         self.search_terms_dict = search_terms_dict
         self.search_defaults = {
-          "limit" : "50",
+          "limit" : "15",
           "full-path" : "0"
         }
         self.get_query = self.BASE_URL + "?"
@@ -100,6 +104,34 @@ class certApiSearch:
         print("Number of unique name certs = " + str(len(catalogue)))
         return catalogue
 
+# Check the PFX file has both a private key and at least one certificate
+def check_pfx_contents(pfx_path, pfx_password):
+    # Load the PFX (PKCS#12) file
+    
+    with open(pfx_path, 'rb') as pfx_file:
+        pfx_data = pfx_file.read()
+    
+    file_password = pfx_password.encode() if not pfx_password else None
+
+    # Parse the PFX file
+    private_key, certificate, additional_certificates = load_key_and_certificates(
+        default_backend(), 
+        pfx_data, 
+        file_password
+    )
+
+    # Check for private key
+    if not private_key:
+        return False
+    
+    # Check for main certificate
+    if not certificate:
+        return False
+    
+    return True
+
+
+
 def main():
     ####
     #### DOWNLOADING STAGE 
@@ -127,11 +159,11 @@ def main():
     catalogue = test.catalogue_search_for_download(search)
 
     # Maintain a set to keep track of hashes
-    hashes = set()
+    all_hashes = set()
     # Add any files that already exist
     for (paths, names, files) in os.walk(directory):
         for file in files:
-            hashes.add(file)
+            all_hashes.add(file)
 
     for filename, url in catalogue.items():
         print("Should I download: " + url)
@@ -141,12 +173,12 @@ def main():
         if download_result:
             file_hash = hash_file(temp_filename)
             
-            if file_hash in hashes:
+            if file_hash in all_hashes:
                 # This is a duplicate file, so remove it
                 os.remove(temp_filename)
                 print(f"Removed duplicate file: {temp_filename}")
             else:
-                hashes.add(file_hash)
+                all_hashes.add(file_hash)
                 # Rename the file to its hash
                 new_filename = directory + file_hash
                 os.rename(temp_filename, new_filename)
@@ -159,7 +191,7 @@ def main():
 
     # Start 2 threads
     threads = []
-    for hash_name in hashes:
+    for hash_name in all_hashes:
         thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, common_roots_file))
         threads.append(thread)
         thread.start()
@@ -168,9 +200,29 @@ def main():
     for thread in threads:
         thread.join()
 
-    print("All tasks completed.\n\n")
-    for item in global_cracks:
+    print(f"All tasks completed.\nCracked Hashes ({len(cracked_hashes)}):\nName\tPassword\n\n")
+    for item in cracked_hashes:
         print('\n', item[0], '\t', item[1])
+
+    ### 
+    ### Verification stage
+    ###
+    for item in cracked_hashes:
+        file_hash = item[0]
+        if item[1] == 'PKCS12 has no password.':
+            pfx_password=None
+        else:
+            pfx_password = item[1]
+        if check_pfx_contents(file_hash, pfx_password):
+            verified_hashes.append((file_hash, item[0]))
+        else:
+            print(f'\n{file_hash} is bad!')
+
+    print(f"\n\nVerified Hashes ({len(verified_hashes)}):\nName\tPassword\n\n")
+    for item in verified_hashes:
+        print('\n', item[0], '\t', item[1])
+
+    print(f"\n{len(cracked_hashes)} ====>>> {len(verified_hashes)}\n")
 
 
 ### MAIN ### 
