@@ -9,37 +9,64 @@ from tqdm import tqdm
 
 global_cracks = []
 
-
-def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
-	print(f"\n\nAttempting to crack {filepath}.\n")
+def subprocess_thread(verifypfx_path, filepath, common_roots_file):
 	result = subprocess.run([verifypfx_path, filepath, common_roots_file], stdout=subprocess.PIPE, text=True)
-	print(f"\nFile {filepath} processed.\n\n")
 	if result.stdout.strip():
 		global_cracks.append((filepath, result.stdout.strip()))
+	return result
+
+def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
+	start_time = time.time()
+	
+	# Start the subprocess in a separate thread
+	thread = threading.Thread(target=subprocess_thread, args=(verifypfx_path, filepath, common_roots_file))
+	thread.start()
+
+	# Create the progress bar
+	pbar = tqdm(total=1, desc=f"Cracking {filepath} [Elapsed Time: 0s]")
+	
+	# While the subprocess thread is alive, update the progress bar's description
+	while thread.is_alive():
+		elapsed_time = int(time.time() - start_time)
+		pbar.set_description(f"Cracking {filepath} [Elapsed Time: {elapsed_time}s]")
+		time.sleep(1)
+
+	pbar.update(1)
+	pbar.close()
+	thread.join()  # Ensure the subprocess thread completes
+
+
+
 
 
 
 def download_file(filename, url):
-	"""
-	Download an URL to a file
-	"""
-	#print("Downloading " + url + "\nSaving to\t" + filename)
-	
 	try:
 		with open(filename, 'wb') as fout:
 			response = requests.get(url, stream=True)
-			response.raise_for_status()
-			# Write response data to file
+			total_size = int(response.headers.get('content-length', 0))
+			pbar = tqdm(total=total_size, unit='B', unit_scale=True, desc=f"Downloading {filename}")
+			
 			for block in response.iter_content(4096):
 				fout.write(block)
-		print("Downloaded: " + url)
-		
-		return True
+				pbar.update(len(block))
+			
+			pbar.close()
+			
+			# Verify if the file was completely downloaded
+			if total_size != 0 and pbar.n != total_size:
+				print("ERROR, something went wrong with the download.")
+				os.remove(filename)
+				return False
+
+			return True
 
 	except Exception as e:
-		print(url + " failed download")
-		os.remove(filename)
+		print(f"Error: {e}")
+		if os.path.exists(filename):
+			os.remove(filename)
 		return False
+
 
 def hash_file(filename):
 	"""
@@ -137,7 +164,6 @@ def main():
 			hashes.add(file)
 
 	for filename, url in catalogue.items():
-		print("Should I download: " + url)
 		temp_filename = directory + filename
 		download_result = download_file(temp_filename, url)
 		
