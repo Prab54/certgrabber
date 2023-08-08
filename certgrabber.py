@@ -156,6 +156,7 @@ def check_pfx_contents(pfx_path, pfx_password):
         return False
 
     # Check if it is issued by a trustworthy CA
+    '''
     all_certs = additional_certificates
     all_certs.append(certificate)
     trusted_issuers = ["DigiCert", "GlobalSign", "Let's Encrypt", "Comodo", "GoDaddy", "Symantec", "GeoTrust", "Certum", "VeriSign", "Sectigo", "DST", "Entrust", "GTS", "Hotspot", "ISRG", "QuoVadis", "Trustwave", "SECOM", "Starfield", "StartCom", "Thawte"]
@@ -165,6 +166,7 @@ def check_pfx_contents(pfx_path, pfx_password):
             break
         else:
             continue
+    '''
     
     with open(f"cracked_certs/{pfx_path[4:9]}_report.txt", 'w') as f:
         f.write(f"Name: {pfx_path[4:]}.pfx\nPassword: {pfx_password}\n\nPrivate Key:\n{private_key}\n\nCertificate(s):\n{certificate}\n{additional_certificates}\n\nDates:\n{certificate.not_valid_before} to {certificate.not_valid_after}")
