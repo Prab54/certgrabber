@@ -73,7 +73,7 @@ class certApiSearch:
         self.api_key = api_key
         self.search_terms_dict = search_terms_dict
         self.search_defaults = {
-          "limit" : "4",
+          "limit" : "1000",
           "full-path" : "0"
         }
         self.get_query = self.BASE_URL + "?"
@@ -232,9 +232,10 @@ def main():
     for thread in threads:
         thread.join()
 
-    print(f"All tasks completed.\nCracked Hashes ({len(cracked_hashes)}):\n\tName\t\t\t\t\t\tPassword")
+    print(f"All tasks completed.\n\nCracked Hashes ({len(cracked_hashes)}):\n\tName\t\t\t\t\t\tPassword")
     for item in cracked_hashes:
         print('\n', item[0], '\t', item[1])
+    print('\n\n')
 
     ### 
     ### Verification stage
