@@ -1,5 +1,6 @@
 import hashlib
 import os
+import shutil
 import requests
 import json
 import threading
@@ -72,7 +73,7 @@ class certApiSearch:
         self.api_key = api_key
         self.search_terms_dict = search_terms_dict
         self.search_defaults = {
-          "limit" : "400",
+          "limit" : "4",
           "full-path" : "0"
         }
         self.get_query = self.BASE_URL + "?"
@@ -151,6 +152,8 @@ def check_pfx_contents(pfx_path, pfx_password):
     if not is_certificate_indate(certificate):
         return False
     
+    with open(f"cracked_certs/{pfx_path[4:9]}_report.txt", 'w') as f:
+        f.write(f"{pfx_path[4:]}\n\nPrivate Key:\n{private_key}\n\nCertificate:\n{certificate}\n\nDates:\n{certificate.not_valid_before} to {certificate.not_valid_after}")
     
     return True
 
@@ -166,6 +169,11 @@ def main():
     if not isExist:
         os.makedirs(directory)
         print("Directory " + directory + " created")
+    
+    isExist = os.path.exists('cracked_certs/')
+    if not isExist:
+        os.makedirs('cracked_certs/')
+        print("Directory cracked_certs/ created")
 
     with open("api_key.txt", "r") as f:
         api_key = f.readlines()[0]
@@ -239,6 +247,7 @@ def main():
             pfx_password = item[1]
         if check_pfx_contents(file_hash, pfx_password):
             verified_hashes.append((file_hash, item[1]))
+            shutil.copy(file_hash, 'cracked_certs/'+file_hash[4:])
         else:
             print(f'{file_hash} is bad!\n')
 
