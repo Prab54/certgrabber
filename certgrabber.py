@@ -153,7 +153,7 @@ def check_pfx_contents(pfx_path, pfx_password):
         return False
     
     with open(f"cracked_certs/{pfx_path[4:9]}_report.txt", 'w') as f:
-        f.write(f"{pfx_path[4:]}\n\nPrivate Key:\n{private_key}\n\nCertificate:\n{certificate}\n\nDates:\n{certificate.not_valid_before} to {certificate.not_valid_after}")
+        f.write(f"Name: {pfx_path[4:]}.pfx\nPassword: {pfx_password}\n\nPrivate Key:\n{private_key}\n\nCertificate(s):\n{certificate}\n{additional_certificates}\n\nDates:\n{certificate.not_valid_before} to {certificate.not_valid_after}")
     
     return True
 
@@ -246,10 +246,11 @@ def main():
         else:
             pfx_password = item[1]
         if check_pfx_contents(file_hash, pfx_password):
+            print(f'{file_hash} is GOOD!\n')
             verified_hashes.append((file_hash, item[1]))
-            shutil.copy(file_hash, 'cracked_certs/'+file_hash[4:])
+            shutil.copy(file_hash, 'cracked_certs/'+file_hash[4:]+'.pfx')
         else:
-            print(f'{file_hash} is bad!\n')
+            print(f'{file_hash} is BAD!\n')
 
     print(f"\n\nVerified Hashes ({len(verified_hashes)}):\n\tName\t\t\t\t\t\tPassword")
     for item in verified_hashes:
