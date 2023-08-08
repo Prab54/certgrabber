@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_cer
 cracked_hashes = []
 verified_hashes = []
 
-limit = 10
+limit = 100
 
 
 
@@ -38,12 +38,13 @@ def download_file(filename, url):
             response.raise_for_status()
             for block in response.iter_content(1024):
                 fout.write(block)
-        
+        return True
         # Update the global progress bar
         
 
     except requests.RequestException as e:
         print(f"Error downloading {url}. Error: {e}")
+        return False
 
 
 def hash_file(filename):
@@ -136,7 +137,6 @@ def check_pfx_contents(pfx_path, pfx_password):
             backend=default_backend()
         )
     except:
-        # debug
         print("\n\t\tREADING FALIURE")
         return False
 
@@ -222,17 +222,16 @@ def main():
         progress_bar.update(1)
         if download_result:
             file_hash = hash_file(temp_filename)
-            
             if file_hash in all_hashes:
                 # This is a duplicate file, so remove it
                 os.remove(temp_filename)
-                print(f"Removed duplicate file: {temp_filename}")
+                #print(f"Removed duplicate file: {temp_filename}")
             else:
                 all_hashes.add(file_hash)
                 # Rename the file to its hash
                 new_filename = directory + file_hash
                 os.rename(temp_filename, new_filename)
-                print(f"Renamed {temp_filename} to {new_filename}")
+                #print(f"Renamed {temp_filename} to {new_filename}")
 
     progress_bar.close()
     print("\nDownloading complete! Moving on to cracking. . .\n")
