@@ -8,12 +8,16 @@ Validity consists of a pfx file that is:
 The project consists of one python script [certgrabber](certgrabber.py) and one C file [testpfxpass](testpfxpass.c).
 ## How to Crack
 1. Clone Repository
-1. Install Requirements:
+1. Compile [testpfxpass.c](testpfxpass.c):
+```
+$ gcc testpfxpass.c -o verifypfx -lcrypto -std=c99
+```
+3. Install Requirements:
 ```
 $ pip install -r requirements.txt
 ```
-3. Create a txt file called **api_key.txt** contating only the users api key from [GrayHatWarfare](https://buckets.grayhatwarfare.com) 
-4. Run the [certgrabber.py](certgrabber.py) script, _see arguments below:_
+4. Create a txt file called **api_key.txt** contating only the users api key from [GrayHatWarfare](https://buckets.grayhatwarfare.com) 
+5. Run the [certgrabber.py](certgrabber.py) script, _see arguments below:_
 
 | Argument | Input | Description |
 | -------- | ----- | ----------- |
