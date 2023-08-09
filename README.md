@@ -5,6 +5,7 @@ The project consists of one python script [certgrabber](certgrabber.py) and one 
 1. Clone Repository
 1. Create a txt file called **api_key.txt** contating only the users api key from [GrayHatWarfare](https://buckets.grayhatwarfare.com) 
 1. Run the [certgrabber.py](certgrabber.py) script, _see arguments below:_
+
 | Argument | Input | Description |
 | -------- | ----- | ----------- |
 | --limit  | Integer 1-1000 | Number of files to download | 
