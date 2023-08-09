@@ -8,16 +8,24 @@ import subprocess
 from datetime import datetime
 from tqdm import tqdm
 import time
+import argparse
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
 
+parser = argparse.ArgumentParser(description=f'Script to crack PFX from the web. Remember to place API key in file called api_key.txt!')
+parser.add_argument('--limit', type=int, required=False, help='The number of files to download. If not entered, default 100.')
+parser.add_argument('--nocrack', action='store_true', required=False, help='Do not crack downloaded files.')
+
+args = parser.parse_args()
+
 cracked_hashes = []
 verified_hashes = []
 
-limit = 100
+limit = args.limit
 
-
+if not limit: 
+    limit = 100
 
 def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
     #print(f"Attempting to crack {filepath}.")
@@ -26,11 +34,7 @@ def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
     if result.stdout.strip():
         cracked_hashes.append((filepath, result.stdout.strip()))
 
-
-
-
 def download_file(filename, url):
-    global progress_bar
     """Download an URL to a file"""
     try:
         with open(filename, 'wb') as fout:
@@ -39,13 +43,10 @@ def download_file(filename, url):
             for block in response.iter_content(1024):
                 fout.write(block)
         return True
-        # Update the global progress bar
-        
 
     except requests.RequestException as e:
         print(f"Error downloading {url}. Error: {e}")
         return False
-
 
 def hash_file(filename):
 	"""
@@ -234,64 +235,63 @@ def main():
                 #print(f"Renamed {temp_filename} to {new_filename}")
 
     progress_bar.close()
-    print("\nDownloading complete! Moving on to cracking. . .\n")
-    time.sleep(5)
+    if not args.nocrack:
+        print("\nMoving on to cracking. . .\n")
+        time.sleep(2)
+        ### 
+        ### CRACKING STAGE 
+        ###
     
-    
-
-    ### 
-    ### CRACKING STAGE 
-    ###
-    verifypfx_path = "./verifypfx"
-    common_roots_file = "./common_roots.txt"
+        verifypfx_path = "./verifypfx"
+        common_roots_file = "./common_roots.txt"
 
 
-    progress_bar_crack = tqdm(total=len(all_hashes), desc="Cracking PFX files (creating threads)", position=0, leave=True)
+        progress_bar_crack = tqdm(total=len(all_hashes), desc="Cracking PFX files (creating threads)", position=0, leave=True)
 
-    # Start 2 threads
-    threads = []
-    for hash_name in all_hashes:
-        thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, common_roots_file))
-        threads.append(thread)
-        thread.start()
-        progress_bar_crack.update(0.1)
+        # Start 2 threads
+        threads = []
+        for hash_name in all_hashes:
+            thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, common_roots_file))
+            threads.append(thread)
+            thread.start()
+            progress_bar_crack.update(0.1)
 
-    progress_bar_crack.set_description("Cracking PFX files (all threads created, cracking...)")
+        progress_bar_crack.set_description("Cracking PFX files (all threads created, cracking...)")
 
-    # Wait for all threads to finish
-    for thread in threads:
-        thread.join()
-        progress_bar_crack.update(0.9)
+        # Wait for all threads to finish
+        for thread in threads:
+            thread.join()
+            progress_bar_crack.update(0.9)
 
-    progress_bar_crack.close()
+        progress_bar_crack.close()
 
-    print(f"\n\nAll tasks completed!\n\nCracked Hashes ({len(cracked_hashes)}):\n\tName\tPassword")
-    for item in cracked_hashes:
-        print('\n', item[0], '\t', item[1])
-    print('\n\n')
+        print(f"\n\nAll tasks completed!\n\nCracked Hashes ({len(cracked_hashes)}):\n\tName\tPassword")
+        for item in cracked_hashes:
+            print('\n', item[0], '\t', item[1])
+        print('\n\n')
 
-    ### 
-    ### Verification stage
-    ###
-    for item in cracked_hashes:
-        file_hash = item[0]
-        if item[1] == 'PKCS12 has no password.':
-            pfx_password=None
-        else:
-            pfx_password = item[1]
-        if check_pfx_contents(file_hash, pfx_password):
-            print(f'{file_hash} is GOOD!\n')
-            verified_hashes.append((file_hash, item[1]))
-            shutil.copy(file_hash, 'cracked_certs/'+file_hash[4:]+'.pfx')
-        else:
-            print(f'{file_hash} is BAD!\n')
+        ### 
+        ### Verification stage
+        ###
+        for item in cracked_hashes:
+            file_hash = item[0]
+            if item[1] == 'PKCS12 has no password.':
+                pfx_password=None
+            else:
+                pfx_password = item[1]
+            if check_pfx_contents(file_hash, pfx_password):
+                print(f'{file_hash} is GOOD!\n')
+                verified_hashes.append((file_hash, item[1]))
+                shutil.copy(file_hash, 'cracked_certs/'+file_hash[4:]+'.pfx')
+            else:
+                print(f'{file_hash} is BAD!\n')
 
-    print(f"\n\nVerified Hashes ({len(verified_hashes)}):\n\tName\t\t\t\t\t\tPassword")
-    for item in verified_hashes:
-        print('\n', item[0], '\t', item[1])
+        print(f"\n\nVerified Hashes ({len(verified_hashes)}):\n\tName\t\t\t\t\t\tPassword")
+        for item in verified_hashes:
+            print('\n', item[0], '\t', item[1])
 
 
-    print(f"\n{len(cracked_hashes)} ====>>> {len(verified_hashes)}\n")
+        print(f"\n{len(cracked_hashes)} ====>>> {len(verified_hashes)}\n")
 
 
 ### MAIN ### 
