@@ -2,7 +2,9 @@
 This project searches for PFX certificates on the web then attempts to download and crack them, checking if they are valid too.
 The project consists of one python script [certgrabber](certgrabber.py) and one C file [testpfxpass_linux](testpfxpass_linux.c).
 ## How to Crack
-To start, create a txt file called api_key.txt contating the users api key from [GrayHatWarfare](https://buckets.grayhatwarfare.com), then run the [certgrabber.py](certgrabber.py) script, providing the number of pfx files to download as a paramater.
+-Clone Repository
+-Create a txt file called **api_key.txt** contating only the users api key from [GrayHatWarfare](https://buckets.grayhatwarfare.com) 
+-Run the [certgrabber.py](certgrabber.py) script, _see arguments below:_
 | Argument | Input | Description |
 | -------- | ----- | ----------- |
 | --limit  | Integer 1-1000 | Number of files to download | 
