@@ -7,6 +7,7 @@ To start, create a txt file called api_key.txt contating the users api key from 
 | -------- | ----- | ----------- |
 | --limit  | Integer 1-1000 | Number of files to download | 
 | --nocrack | none | Downloads files but does not crack |
+| -h | none | Display help menu |
 
 Example to download 200 pfx files:
 ```
