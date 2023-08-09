@@ -1,5 +1,5 @@
-// Compile: gcc testpfxpass_linux.c -o verifypfxlinux -lcrypto -std=c99
-// Run:  ./verifypfxlinux dls/2023_senha122015.pfx common_roots.txt
+// Compile: gcc testpfxpass.c -o verifypfx -lcrypto -std=c99
+// Run:  ./verifypfx dls/2023_senha122015.pfx common_roots.txt
 
 #include <stdio.h>
 #include <errno.h>
