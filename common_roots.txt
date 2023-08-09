@@ -2188,6 +2188,7 @@ familia
 family
 familymacintosh
 famous
+fanny
 fantasy
 fashion
 fastweb
