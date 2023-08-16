@@ -63,12 +63,12 @@
     {% endif %}
     <div class="container mt-4">
         <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
-            <h3>Successful Cracks of Unique Certs</h3>
+            <h3>Successful Cracks of Unique Certs ({{ number_of_unique_files }})</h3>
             <canvas id="crackedPie" style="width:100%;max-height:400px"></canvas>
         </div>
         {% if number_of_successful_cracks > 0 %}
         <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
-            <h3 class="mb-3">Working Cracked Certs</h3>
+            <h3 class="mb-3">Working Cracked Certs ({{ number_of_successful_cracks }})</h3>
             <canvas id="workingCrackedPie" style="width:100%;max-height:400px"></canvas>
         </div>
         {% endif %}
