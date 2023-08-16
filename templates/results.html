@@ -72,6 +72,10 @@
             <canvas id="workingCrackedPie" style="width:100%;max-height:400px"></canvas>
         </div>
         {% endif %}
+        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
+            <h3>Most Common Passwords</h3>
+            <canvas id="passwordsChart" style="width:100%;max-height:400px"></canvas>
+        </div>
     </div>
 
 
@@ -105,6 +109,9 @@
     var number_of_no_cert = {{ number_of_no_cert }};
     var number_of_self_signed = {{ number_of_self_signed }};
     var limit = {{ limit }};
+    var passwords_dict = {{ commonPasswords | tojson }};
+    var passwords = Object.keys(commonPasswords);
+    var counts = Object.values(commonPasswords);
 
 
     var ctx = document.getElementById('crackedPie').getContext('2d');
@@ -157,6 +164,30 @@
     var workingCrackedPie = new Chart(ctx2, {
         type: 'pie',
         data: cracked2
+    });
+
+    var ctx3 = document.getElementById('passwordsChart').getContext('2d');
+    var passwordsData = {
+        labels: passwords,
+        datasets: [{
+            label: 'Occurrences',
+            data: counts,
+            backgroundColor: 'rgba(58, 219, 18, 0.6)',   // You can change color
+            borderColor: 'rgba(58, 219, 18, 1)',
+            borderWidth: 1
+        }]
+    };
+
+    var passwordsChart = new Chart(ctx3, {
+        type: 'bar',   // You can use 'bar' or 'line' or any other type
+        data: passwordsData,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
     });
 
 

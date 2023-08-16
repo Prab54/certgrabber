@@ -13,6 +13,9 @@ from flask import Flask, render_template, request, flash, redirect, url_for, jso
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
 
+with open("commonPasswords.json", 'r') as json_file:
+        commonPasswords = json.load(json_file)
+
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
 @app.route('/')
@@ -31,6 +34,7 @@ def run():
 		global number_of_unique_files
 		global number_of_successful_cracks
 		global number_of_good_results
+		global commonPasswords
 
 		####
 		#### DOWNLOADING STAGE 
@@ -152,12 +156,20 @@ def run():
 					pfx_password=None
 				else:
 					pfx_password = item[1]
+					if pfx_password not in commonPasswords:
+						commonPasswords[pfx_password] = 1
+					else:
+						commonPasswords[pfx_password] +=1
+				
 				if check_pfx_contents(file_hash, pfx_password):
 					print(f'{file_hash} is GOOD!\n')
 					verified_hashes.append((file_hash, item[1]))
 					shutil.copy(file_hash, 'cracked_certs/'+file_hash[4:]+'.pfx')
 				else:
 					print(f'{file_hash} is BAD!\n')
+
+			with open("commonPasswords.json", 'w') as json_file:
+				json.dump(commonPasswords, json_file, indent=4)
 
 			number_of_good_results = len(verified_hashes)
 			print(f"\n\nVerified Hashes ({len(verified_hashes)}):\n\tName\t\t\t\t\t\tPassword")
@@ -175,7 +187,8 @@ def run():
 			number_of_no_private_key=number_of_no_private_key,
 			number_of_no_cert=number_of_no_cert,
 			number_of_self_signed=number_of_self_signed,
-			limit=limit
+			limit=limit,
+			commonPasswords = commonPasswords
 			)
 
 
@@ -359,6 +372,8 @@ def check_pfx_contents(pfx_path, pfx_password):
 
 
 app.secret_key = "supersecretkey"
+
+
 
 if __name__ == "__main__":
 	app.config['SESSION_TYPE'] = 'filesystem'
