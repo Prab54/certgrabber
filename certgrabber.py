@@ -26,6 +26,7 @@ def run():
 		limit = request.form.get('limit')
 		crack = request.form.get('crack')
 		dict = request.form.get('dict')
+		search_term = request.form.get('searchterm')
 
 		global number_of_unique_files
 		global number_of_successful_cracks
@@ -60,7 +61,7 @@ def run():
 
 		search_terms_dict = {
 			"extensions" : "pfx",
-			"keywords" : "e"
+			"keywords" : f"{search_term}"
 		}
 
 		test = certApiSearch(limit)
