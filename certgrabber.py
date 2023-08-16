@@ -22,6 +22,17 @@ args = parser.parse_args()
 cracked_hashes = []
 verified_hashes = []
 
+# WEB INTERFACE TRACKING VARS
+number_of_unique_files = 0
+number_of_successful_cracks = 0
+number_of_invalid = 0
+number_of_out_of_date = 0
+number_of_no_private_key = 0
+number_of_no_cert = 0
+number_of_self_signed = 0
+number_of_good_results = 0
+
+
 limit = args.limit
 
 
@@ -121,6 +132,11 @@ def is_certificate_indate(cert):
 
 # Check the PFX file has both a private key and at least one certificate
 def check_pfx_contents(pfx_path, pfx_password):
+    global number_of_invalid
+    global number_of_out_of_date
+    global number_of_no_private_key
+    global number_of_no_cert
+    global number_of_self_signed
     # Load the PFX (PKCS#12) file
     
     with open(pfx_path, 'rb') as pfx_file:
@@ -140,22 +156,26 @@ def check_pfx_contents(pfx_path, pfx_password):
         )
     except:
         print("\n\t\tREADING FALIURE")
+        number_of_invalid = number_of_invalid + 1
         return False
 
 
     # Check for private key
     print(pfx_path[4:9]+':  ',private_key)
     if not private_key:
+        number_of_no_private_key = number_of_no_private_key + 1
         return False
     
     # Check for main certificate
     print(pfx_path[4:9]+':  ',certificate)
     if not certificate:
+        number_of_no_cert = number_of_no_cert + 1
         return False
     
     # Check it is in date
     print(pfx_path[4:9]+':  ', certificate.not_valid_before, certificate.not_valid_after)
     if not is_certificate_indate(certificate):
+        number_of_out_of_date = number_of_out_of_date + 1
         return False
 
     # Check if it is issued by a trustworthy CA
@@ -170,6 +190,10 @@ def check_pfx_contents(pfx_path, pfx_password):
         else:
             continue
     '''
+    # Check if it is self-signed (no additional certs)
+    if additional_certificates == []:
+        number_of_self_signed = number_of_self_signed + 1
+        return False
     
     with open(f"cracked_certs/{pfx_path[4:9]}_report.txt", 'w') as f:
         f.write(f"Name: {pfx_path[4:]}.pfx\nPassword: {pfx_password}\n\nPrivate Key:\n{private_key}\n\nCertificate(s):\n{certificate}\n{additional_certificates}\n\nDates:\n{certificate.not_valid_before} to {certificate.not_valid_after}")
@@ -179,6 +203,9 @@ def check_pfx_contents(pfx_path, pfx_password):
 
 
 def main():
+    global number_of_unique_files
+    global number_of_successful_cracks
+    global number_of_good_results
     ####
     #### DOWNLOADING STAGE 
     ####
@@ -236,6 +263,8 @@ def main():
                 #print(f"Renamed {temp_filename} to {new_filename}")
 
     progress_bar.close()
+    number_of_unique_files = number_of_unique_files + len(all_hashes)
+
     if not args.nocrack:
         print("\nMoving on to cracking. . .\n")
         time.sleep(2)
@@ -270,6 +299,7 @@ def main():
         for item in cracked_hashes:
             print('\n', item[0], '\t', item[1])
         print('\n\n')
+        number_of_successful_cracks = number_of_successful_cracks + len(cracked_hashes)
 
         ### 
         ### Verification stage
@@ -287,14 +317,17 @@ def main():
             else:
                 print(f'{file_hash} is BAD!\n')
 
+        number_of_good_results = len(verified_hashes)
         print(f"\n\nVerified Hashes ({len(verified_hashes)}):\n\tName\t\t\t\t\t\tPassword")
         for item in verified_hashes:
             print('\n', item[0], '\t', item[1])
 
 
         print(f"\n{len(cracked_hashes)} ====>>> {len(verified_hashes)}\n")
+        
 
 
 ### MAIN ### 
 if __name__ == '__main__':
-	main()
+    main()
+    print(f"\n\n\n\nUnique: {number_of_unique_files}\nCracked: {number_of_successful_cracks}\nBadRead: {number_of_invalid}\nBadDate: {number_of_out_of_date}\nNokey: {number_of_no_private_key}\nNoCert: {number_of_no_cert}\nSelfSigned: {number_of_self_signed}\nGood: {number_of_good_results}")
