@@ -55,35 +55,25 @@
             </a>
         </div>
     </nav>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
+    {% if number_of_good_results > 0 %}
     <div class="container mt-3">
-        {% for category, message in messages %}
-        <div class="alert alert-{{category}}" role="alert">
-            {{ message }}
+        <div class="alert alert-success" role="alert">View cracked certs and reports at <strong>/cracked_certs</strong>
         </div>
-        {% endfor %}
     </div>
     {% endif %}
-    {% endwith %}
-
     <div class="container mt-4">
         <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
-            <h3 class="mb-3">Number of Downloads</h3>
-            <canvas id="numdownloaded" style="width:100%;max-height:400px"></canvas>
-        </div>
-        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
-            <h3>Successful Cracks</h3>
+            <h3>Successful Cracks of Unique Certs</h3>
             <canvas id="crackedPie" style="width:100%;max-height:400px"></canvas>
         </div>
+        {% if number_of_successful_cracks > 0 %}
         <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
-            <h3 class="mb-3">Title for Second Pie Chart</h3>
+            <h3 class="mb-3">Working Cracked Certs</h3>
             <canvas id="workingCrackedPie" style="width:100%;max-height:400px"></canvas>
         </div>
-       
+        {% endif %}
     </div>
-    
+
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
         integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
@@ -116,28 +106,6 @@
     var number_of_self_signed = {{ number_of_self_signed }};
     var limit = {{ limit }};
 
-    var ctx0 = document.getElementById('numdownloaded').getContext('2d');
-
-    var numdownloaded = {
-        datasets: [{
-            data: [limit - number_of_unique_files, number_of_unique_files],
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.6)',   // Color for successful cracks
-                'rgba(54, 162, 235, 0.6)'    // Color for unique files
-            ]
-        }],
-
-        // These labels appear in the legend and in the tooltips when hovering different arcs
-        labels: [
-            'Duplicate',
-            'Unique '
-        ]
-    };
-
-    var numdownloadedPie = new Chart(ctx0, {
-        type: 'pie',
-        data: numdownloaded
-    });
 
     var ctx = document.getElementById('crackedPie').getContext('2d');
 
@@ -145,8 +113,8 @@
         datasets: [{
             data: [number_of_successful_cracks, number_of_unique_files - number_of_successful_cracks],
             backgroundColor: [
-                'rgba(255, 99, 132, 0.6)',   // Color for successful cracks
-                'rgba(54, 162, 235, 0.6)'    // Color for unique files
+                'rgba(58, 219, 18, 0.6)',   // Color for successful cracks
+                'rgba(179, 8, 2, 0.6)'    // Color for unique files
             ]
         }],
 
@@ -167,17 +135,23 @@
     var ctx2 = document.getElementById('workingCrackedPie').getContext('2d');
     var cracked2 = {
         datasets: [{
-            data: [number_of_good_results, number_of_successful_cracks - number_of_good_results],
+            data: [number_of_good_results, number_of_out_of_date, number_of_no_private_key, number_of_no_cert, number_of_self_signed],
             backgroundColor: [
-                'rgba(255, 99, 132, 0.6)',   // Color for successful cracks
-                'rgba(54, 162, 235, 0.6)'    // Color for unique files
+                'rgba(58, 219, 18, 0.6)',   // Color for successful cracks
+                'rgba(179, 152, 2, 0.6)',
+                'rgba(139, 204, 232, 0.6)',
+                'rgba(250, 106, 22, 0.6)',
+                'rgba(250, 22, 239, 0.6)',    // Color for unique files
             ]
         }],
 
         // These labels appear in the legend and in the tooltips when hovering different arcs
         labels: [
             'Good',
-            'Bad'
+            'Out of Date',
+            'No Private Key',
+            'No Certs',
+            'Self Signed'
         ]
     };
     var workingCrackedPie = new Chart(ctx2, {

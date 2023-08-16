@@ -76,8 +76,8 @@
                         <div class="row mt-4">
                             <div class="col">
                                 <label for="apikey" class="form-label">API Key</label>
-                                <input type="text" class="form-control" id="apikey" name="apikey" placeholder="Leave blank to use api key in api_key.txt"
-                                    aria-describedby="API key">
+                                <input type="text" class="form-control" id="apikey" name="apikey"
+                                    placeholder="Leave blank to use api key in api_key.txt" aria-describedby="API key">
                             </div>
 
                             <div class="col">
@@ -93,7 +93,8 @@
                             <div class="row">
                                 <div class="col">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="" name="crack" id="flexCheckDefault">
+                                        <input class="form-check-input" type="checkbox" value="True" name="crack"
+                                            id="flexCheckDefault">
                                         <label class="form-check-label" for="flexCheckDefault">
                                             Attempt to crack downloaded certs
                                         </label>
@@ -101,10 +102,9 @@
                                 </div>
                                 <div class="row">
                                     <div class="col">
-                                        <select class="form-select mt-3 " id="dropdown" name="dict" aria-label="Default select example"
-                                            style="display:none;">
-                                            <option selected>Select a worldlist to crack with:</option>
-                                            <option value="1">common_roots.txt</option>
+                                        <select class="form-select mt-3 " id="dropdown" name="dict"
+                                            aria-label="Default select example" style="display:none;" required placeholder="Select a worldlist to crack with:">
+                                            <option value="1" selected>common_roots.txt</option>
                                         </select>
                                     </div>
                                 </div>
@@ -112,9 +112,14 @@
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="mt-3 btn bt-button btn-outline-light btn-block" >Run</button>
-                <div class="spinner-border text-primary" id="loadingSpinner" role="status" style="display:none;">
-                    <span class="sr-only">Loading...</span>
+                <button type="submit" class="mt-3 btn bt-button btn-outline-light btn-block">Run</button>
+                <div id="loadingSpinner"
+                    style="display: none; position: fixed; top: 0; left: 0; height: 100%; width: 100%; background-color: rgba(255,255,255,0.8); z-index: 9999;">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">grabbing</span>
+                        </div>
+                    </div>
                 </div>
 
             </form>
@@ -152,10 +157,11 @@
     });
 </script>
 <script>
-    document.getElementById('yourFormId').addEventListener('submit', function() {
-        document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById("search").addEventListener("submit", function () {
+        document.getElementById("loadingSpinner").style.display = "block";
     });
 </script>
+
 
 
 </html>

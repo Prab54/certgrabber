@@ -24,6 +24,7 @@ def run():
 	if request.method == 'POST':
 		apikey = request.form.get('apikey')
 		limit = request.form.get('limit')
+		crack = request.form.get('crack')
 		dict = request.form.get('dict')
 
 		global number_of_unique_files
@@ -59,7 +60,7 @@ def run():
 
 		search_terms_dict = {
 			"extensions" : "pfx",
-			"keywords" : ""
+			"keywords" : "cert"
 		}
 
 		test = certApiSearch(limit)
@@ -112,7 +113,7 @@ def run():
 
 		print(dict)
 
-		if dict == '1':
+		if crack != None:
 			print("\nMoving on to cracking. . .\n")
 			progress_bar_crack = tqdm(total=len(all_hashes), desc="Cracking PFX files (creating threads)", position=0, leave=True)
 
