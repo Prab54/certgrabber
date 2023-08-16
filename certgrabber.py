@@ -273,7 +273,7 @@ def main():
         ###
     
         verifypfx_path = "./verifypfx"
-        common_roots_file = "./common_roots.txt"
+        common_roots_file = "./root_months.txt"
 
 
         progress_bar_crack = tqdm(total=len(all_hashes), desc="Cracking PFX files (creating threads)", position=0, leave=True)

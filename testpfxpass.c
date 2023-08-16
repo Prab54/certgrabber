@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define listlength 4727
+#define listlength 18200
 #define wordslength 21
 
 char **getwords (FILE *fp, int *n);
