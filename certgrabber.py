@@ -191,7 +191,7 @@ def check_pfx_contents(pfx_path, pfx_password):
             continue
     '''
     # Check if it is self-signed (no additional certs)
-    if additional_certificates == []:
+    if certificate.issuer == certificate.subject:
         number_of_self_signed = number_of_self_signed + 1
         return False
     
