@@ -60,7 +60,7 @@ def run():
 
 		search_terms_dict = {
 			"extensions" : "pfx",
-			"keywords" : "test"
+			"keywords" : "e"
 		}
 
 		test = certApiSearch(limit)
@@ -79,7 +79,9 @@ def run():
 			for file in files:
 				all_hashes.add(file)
 
-		for filename, url in catalogue:
+		for item in catalogue:
+			filename = item['filename']
+			url = item['url']
 			temp_filename = directory + filename
 			download_result = download_file(temp_filename, url)
 			progress_bar.update(1)
