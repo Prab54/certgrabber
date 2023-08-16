@@ -285,73 +285,74 @@ def is_certificate_indate(cert):
 
 # Check the PFX file has both a private key and at least one certificate
 def check_pfx_contents(pfx_path, pfx_password):
-	global number_of_invalid
-	global number_of_out_of_date
-	global number_of_no_private_key
-	global number_of_no_cert
-	global number_of_self_signed
-	# Load the PFX (PKCS#12) file
-	
-	with open(pfx_path, 'rb') as pfx_file:
-		pfx_data = pfx_file.read()
-	
-	if pfx_password != None:
-		file_password = pfx_password.encode()
-	else:
-		file_password = None
+    global number_of_invalid
+    global number_of_out_of_date
+    global number_of_no_private_key
+    global number_of_no_cert
+    global number_of_self_signed
+    # Load the PFX (PKCS#12) file
+    
+    with open(pfx_path, 'rb') as pfx_file:
+        pfx_data = pfx_file.read()
+    
+    if pfx_password != None:
+        file_password = pfx_password.encode()
+    else:
+        file_password = None
 
-	# Parse the PFX file
-	try:
-		private_key, certificate, additional_certificates = load_key_and_certificates(
-			pfx_data, 
-			file_password,
-			backend=default_backend()
-		)
-	except:
-		print("\n\t\tREADING FALIURE")
-		number_of_invalid = number_of_invalid + 1
-		return False
+    # Parse the PFX file
+    try:
+        private_key, certificate, additional_certificates = load_key_and_certificates(
+            pfx_data, 
+            file_password,
+            backend=default_backend()
+        )
+    except:
+        print("\n\t\tREADING FALIURE")
+        number_of_invalid = number_of_invalid + 1
+        return False
 
 
-	# Check for private key
-	print(pfx_path[4:9]+':  ',private_key)
-	if not private_key:
-		number_of_no_private_key = number_of_no_private_key + 1
-		return False
-	
-	# Check for main certificate
-	print(pfx_path[4:9]+':  ',certificate)
-	if not certificate:
-		number_of_no_cert = number_of_no_cert + 1
-		return False
-	
-	# Check it is in date
-	print(pfx_path[4:9]+':  ', certificate.not_valid_before, certificate.not_valid_after)
-	if not is_certificate_indate(certificate):
-		number_of_out_of_date = number_of_out_of_date + 1
-		return False
+    # Check for private key
+    print(pfx_path[4:9]+':  ',private_key)
+    if not private_key:
+        number_of_no_private_key = number_of_no_private_key + 1
+        return False
+    
+    # Check for main certificate
+    print(pfx_path[4:9]+':  ',certificate)
+    if not certificate:
+        number_of_no_cert = number_of_no_cert + 1
+        return False
+    
+    # Check it is in date
+    print(pfx_path[4:9]+':  ', certificate.not_valid_before, certificate.not_valid_after)
+    if not is_certificate_indate(certificate):
+        number_of_out_of_date = number_of_out_of_date + 1
+        return False
 
-	# Check if it is issued by a trustworthy CA
-	'''
-	all_certs = additional_certificates
-	all_certs.append(certificate)
-	trusted_issuers = ["DigiCert", "GlobalSign", "Let's Encrypt", "Comodo", "GoDaddy", "Symantec", "GeoTrust", "Certum", "VeriSign", "Sectigo", "DST", "Entrust", "GTS", "Hotspot", "ISRG", "QuoVadis", "Trustwave", "SECOM", "Starfield", "StartCom", "Thawte"]
-	for cert in all_certs:
-		issuer_name = cert.issuer.rfc4514_string()
-		if any(trusted_issuer.lower() in issuer_name.lower() for trusted_issuer in trusted_issuers):
-			break
-		else:
-			continue
-	'''
-	# Check if it is self-signed (no additional certs)
-	if additional_certificates == []:
-		number_of_self_signed = number_of_self_signed + 1
-		return False
-	
-	with open(f"cracked_certs/{pfx_path[4:9]}_report.txt", 'w') as f:
-		f.write(f"Name: {pfx_path[4:]}.pfx\nPassword: {pfx_password}\n\nPrivate Key:\n{private_key}\n\nCertificate(s):\n{certificate}\n{additional_certificates}\n\nDates:\n{certificate.not_valid_before} to {certificate.not_valid_after}")
-	
-	return True
+    # Check if it is issued by a trustworthy CA
+    '''
+    all_certs = additional_certificates
+    all_certs.append(certificate)
+    trusted_issuers = ["DigiCert", "GlobalSign", "Let's Encrypt", "Comodo", "GoDaddy", "Symantec", "GeoTrust", "Certum", "VeriSign", "Sectigo", "DST", "Entrust", "GTS", "Hotspot", "ISRG", "QuoVadis", "Trustwave", "SECOM", "Starfield", "StartCom", "Thawte"]
+    for cert in all_certs:
+        issuer_name = cert.issuer.rfc4514_string()
+        if any(trusted_issuer.lower() in issuer_name.lower() for trusted_issuer in trusted_issuers):
+            break
+        else:
+            continue
+    '''
+    # Check if it is self-signed (no additional certs)
+    if certificate.issuer == certificate.subject:
+        number_of_self_signed = number_of_self_signed + 1
+        return False
+    
+    with open(f"cracked_certs/{pfx_path[4:9]}_report.txt", 'w') as f:
+        f.write(f"Name: {pfx_path[4:]}.pfx\nPassword: {pfx_password}\n\nPrivate Key:\n{private_key}\n\nCertificate(s):\n{certificate}\n{additional_certificates}\n\nDates:\n{certificate.not_valid_before} to {certificate.not_valid_after}")
+    
+    return True
+
   
 		
 
