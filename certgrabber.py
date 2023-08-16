@@ -105,14 +105,14 @@ def run():
 
 		verifypfx_path = "./verifypfx"
 
-		if dict == 1:
+		if dict == '1':
 			dictionary = "./common_roots.txt"
 		else:
 			dictionary = "./common_roots.txt"
 
 		print(dict)
 
-		if dict == 1:
+		if dict == '1':
 			print("\nMoving on to cracking. . .\n")
 			progress_bar_crack = tqdm(total=len(all_hashes), desc="Cracking PFX files (creating threads)", position=0, leave=True)
 
@@ -163,7 +163,16 @@ def run():
 
 			print(f"\n{len(cracked_hashes)} ====>>> {len(verified_hashes)}\n")
 
-	return render_template('results.html', number_of_successful_cracks=number_of_successful_cracks, number_of_unique_files=number_of_unique_files)
+	return render_template('results.html', number_of_successful_cracks=number_of_successful_cracks, 
+			number_of_unique_files=number_of_unique_files, 
+			number_of_good_results=number_of_good_results,
+			number_of_invalid=number_of_invalid,
+			number_of_out_of_date=number_of_out_of_date,
+			number_of_no_private_key=number_of_no_private_key,
+			number_of_no_cert=number_of_no_cert,
+			number_of_self_signed=number_of_self_signed,
+			limit=limit
+			)
 
 
 

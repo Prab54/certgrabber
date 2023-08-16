@@ -69,11 +69,21 @@
     {% endwith %}
 
     <div class="container mt-4">
-        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3">
-            <canvas id="myPieChart" style="width:100%;max-height:400px"></canvas>
-
+        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
+            <h3 class="mb-3">Number of Downloads</h3>
+            <canvas id="numdownloaded" style="width:100%;max-height:400px"></canvas>
         </div>
+        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
+            <h3>Successful Cracks</h3>
+            <canvas id="crackedPie" style="width:100%;max-height:400px"></canvas>
+        </div>
+        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
+            <h3 class="mb-3">Title for Second Pie Chart</h3>
+            <canvas id="workingCrackedPie" style="width:100%;max-height:400px"></canvas>
+        </div>
+       
     </div>
+    
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
         integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
@@ -98,11 +108,42 @@
 <script>
     var number_of_successful_cracks = {{ number_of_successful_cracks }};
     var number_of_unique_files = {{ number_of_unique_files }};
-    var ctx = document.getElementById('myPieChart').getContext('2d');
+    var number_of_good_results = {{ number_of_good_results }};
+    var number_of_invalid = {{ number_of_invalid }};
+    var number_of_out_of_date = {{ number_of_out_of_date }};
+    var number_of_no_private_key = {{ number_of_no_private_key }};
+    var number_of_no_cert = {{ number_of_no_cert }};
+    var number_of_self_signed = {{ number_of_self_signed }};
+    var limit = {{ limit }};
 
-    var data = {
+    var ctx0 = document.getElementById('numdownloaded').getContext('2d');
+
+    var numdownloaded = {
         datasets: [{
-            data: [number_of_successful_cracks, number_of_unique_files],
+            data: [limit - number_of_unique_files, number_of_unique_files],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.6)',   // Color for successful cracks
+                'rgba(54, 162, 235, 0.6)'    // Color for unique files
+            ]
+        }],
+
+        // These labels appear in the legend and in the tooltips when hovering different arcs
+        labels: [
+            'Duplicate',
+            'Unique '
+        ]
+    };
+
+    var numdownloadedPie = new Chart(ctx0, {
+        type: 'pie',
+        data: numdownloaded
+    });
+
+    var ctx = document.getElementById('crackedPie').getContext('2d');
+
+    var cracked = {
+        datasets: [{
+            data: [number_of_successful_cracks, number_of_unique_files - number_of_successful_cracks],
             backgroundColor: [
                 'rgba(255, 99, 132, 0.6)',   // Color for successful cracks
                 'rgba(54, 162, 235, 0.6)'    // Color for unique files
@@ -112,14 +153,39 @@
         // These labels appear in the legend and in the tooltips when hovering different arcs
         labels: [
             'Successful Cracks',
-            'Unique Files'
+            'Unsuccesssful Cracks'
         ]
     };
 
-    var myPieChart = new Chart(ctx, {
+    var crackedPie = new Chart(ctx, {
         type: 'pie',
-        data: data
+        data: cracked
     });
+
+
+
+    var ctx2 = document.getElementById('workingCrackedPie').getContext('2d');
+    var cracked2 = {
+        datasets: [{
+            data: [number_of_good_results, number_of_successful_cracks - number_of_good_results],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.6)',   // Color for successful cracks
+                'rgba(54, 162, 235, 0.6)'    // Color for unique files
+            ]
+        }],
+
+        // These labels appear in the legend and in the tooltips when hovering different arcs
+        labels: [
+            'Good',
+            'Bad'
+        ]
+    };
+    var workingCrackedPie = new Chart(ctx2, {
+        type: 'pie',
+        data: cracked2
+    });
+
+
 
 </script>
 
