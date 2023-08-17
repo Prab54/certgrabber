@@ -109,9 +109,16 @@
     var number_of_no_cert = {{ number_of_no_cert }};
     var number_of_self_signed = {{ number_of_self_signed }};
     var limit = {{ limit }};
-    var passwords_dict = {{ commonPasswords | tojson }};
-    var passwords = Object.keys(commonPasswords);
-    var counts = Object.values(commonPasswords);
+    var passwords_dict = {{ commonPasswords | tojson | safe }};
+    var passwords = Object.keys(passwords_dict);
+    var counts = Object.values(passwords_dict);
+
+    function getRandomColor() {
+        const r = Math.floor(Math.random() * 256);
+        const g = Math.floor(Math.random() * 256);
+        const b = Math.floor(Math.random() * 256);
+        return `rgba(${r},${g},${b}, 0.6)`;   // Added opacity here for consistency with your code
+    }
 
 
     var ctx = document.getElementById('crackedPie').getContext('2d');
@@ -167,13 +174,15 @@
     });
 
     var ctx3 = document.getElementById('passwordsChart').getContext('2d');
+    var backgroundColors = counts.map(() => getRandomColor());
+    var borderColors = backgroundColors.map(color => color.replace("0.6", "1")); // Make borders opaque
     var passwordsData = {
         labels: passwords,
         datasets: [{
             label: 'Occurrences',
             data: counts,
-            backgroundColor: 'rgba(58, 219, 18, 0.6)',   // You can change color
-            borderColor: 'rgba(58, 219, 18, 1)',
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
             borderWidth: 1
         }]
     };

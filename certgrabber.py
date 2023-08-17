@@ -115,10 +115,13 @@ def run():
 
 		if dict == '1':
 			dictionary = "./common_roots.txt"
+			dict_length = 4727
+		elif dict == '2': 
+			dictionary = "./rockyouSlim.txt"
+			dict_length = 30000
 		else:
 			dictionary = "./common_roots.txt"
-
-		print(dict)
+			dict_length = 4727
 
 		if crack != None:
 			print("\nMoving on to cracking. . .\n")
@@ -127,7 +130,7 @@ def run():
 			# Start 2 threads
 			threads = []
 			for hash_name in all_hashes:
-				thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, dictionary))
+				thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, dictionary, dict_length))
 				threads.append(thread)
 				thread.start()
 				progress_bar_crack.update(0.1)
@@ -188,7 +191,7 @@ def run():
 			number_of_no_cert=number_of_no_cert,
 			number_of_self_signed=number_of_self_signed,
 			limit=limit,
-			commonPasswords = commonPasswords
+			commonPasswords=commonPasswords
 			)
 
 
@@ -208,9 +211,9 @@ number_of_no_cert = 0
 number_of_self_signed = 0
 number_of_good_results = 0
 
-def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file):
+def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file, dict_length):
 	#print(f"Attempting to crack {filepath}.")
-	result = subprocess.run([verifypfx_path, filepath, common_roots_file], stdout=subprocess.PIPE, text=True)
+	result = subprocess.run([verifypfx_path, filepath, common_roots_file, dict_length], stdout=subprocess.PIPE, text=True)
 	#print(f"File {filepath} processed.")
 	if result.stdout.strip():
 		cracked_hashes.append((filepath, result.stdout.strip()))
