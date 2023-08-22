@@ -72,10 +72,12 @@
             <canvas id="workingCrackedPie" style="width:100%;max-height:400px"></canvas>
         </div>
         {% endif %}
+        {% if  curr_pass_len > 0 %}
         <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
             <h3>Current Downloads Passwords</h3>
             <canvas id="currentPasswordsChart" style="width:100%;max-height:400px"></canvas>
         </div>
+        {% endif %}
         <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
             <h3>Most Common Passwords (All time)</h3>
             <canvas id="passwordsChart" style="width:100%;max-height:400px"></canvas>
@@ -121,6 +123,37 @@
     var current_passwords_dict = {{ current_passwords | tojson | safe }};
     var current_d_passwords = Object.keys(current_passwords_dict);
     var current_counts = Object.values(current_passwords_dict);
+    var curr_pass_len = {{ curr_pass_len }}
+
+    var allPassData = [];
+    var allCurPassData = [];
+    for (let i = 0; i < passwords.length; ++i) {
+        allPassData.push({
+            pass: passwords[i],
+            count: counts[i]
+    });
+    }
+    for (let i = 0; i < current_d_passwords.length; ++i) {
+        allCurPassData.push({
+            pass: current_d_passwords[i],
+            count: cur[i]
+    });
+    }
+    // Sort them by the data value
+    allPassData.sort((a, b) => a.count - b.count);
+    allCurPassData.sort((a, b) => a.count - b.count);
+
+    // And split them again
+    var sortedPasswords = allPassData.map(e => e.pass);
+    var sortedCounts = allPassData.map(e => e.count);
+    var sortedCurPasswords = allCurPassData.map(e => e.pass);
+    var sortedCurCounts = allCurPassData.map(e => e.count);
+
+    console.log(sortedPasswords);   // ["B", "A", "D", "C"] 
+    console.log(sortedCounts);
+    console.log(sortedCurPasswords);   // ["B", "A", "D", "C"] 
+    console.log(sortedCurCounts);
+
 
     function getRandomColor() {
         const r = Math.floor(Math.random() * 256);
@@ -186,10 +219,9 @@
     var backgroundColors = counts.map(() => getRandomColor());
     var borderColors = backgroundColors.map(color => color.replace("0.6", "1")); // Make borders opaque
     var passwordsData = {
-        labels: passwords,
+        labels: sortedPasswords,
         datasets: [{
-            label: 'Occurrences',
-            data: counts,
+            data: sortedCounts,
             backgroundColor: backgroundColors,
             borderColor: borderColors,
             borderWidth: 1
@@ -210,20 +242,20 @@
 
 
     var ctx4 = document.getElementById('currentPasswordsChart').getContext('2d');
-    var backgroundColors = counts.map(() => getRandomColor());
+    var backgroundColors = current_counts.map(() => getRandomColor());
     var borderColors = backgroundColors.map(color => color.replace("0.6", "1")); // Make borders opaque
     var passwordsData = {
-        labels: passwords,
+        labels: sortedCurPasswords,
         datasets: [{
             label: 'Occurrences',
-            data: counts,
+            data: sortedCurCounts,
             backgroundColor: backgroundColors,
             borderColor: borderColors,
             borderWidth: 1
         }]
     };
 
-    var passwordsChart = new Chart(ctx4, {
+    var currentPasswordsChart = new Chart(ctx4, {
         type: 'bar',   // You can use 'bar' or 'line' or any other type
         data: passwordsData,
         options: {

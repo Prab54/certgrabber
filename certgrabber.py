@@ -35,7 +35,6 @@ def run():
 		number_of_unique_files = 0
 		number_of_successful_cracks = 0
 		number_of_good_results = 0
-		current_passwords = 0
 
 		####
 		#### DOWNLOADING STAGE 
@@ -76,6 +75,7 @@ def run():
 		}
 
 		current_passwords = {}
+		current_passwords.clear()
 		test = certApiSearch(limit)
 		search = test.grayhatwarfare(api_key, search_terms_dict)
 		print("Search record limit = " + str(search['query']['limit']))
@@ -136,6 +136,11 @@ def run():
 			print("\nMoving on to cracking. . .\n")
 			progress_bar_crack = tqdm(total=len(all_hashes), desc="Cracking PFX files (creating threads)", position=0, leave=True)
 
+			files_list = os.listdir('password_cracked_certs/')
+			# Filter out directories, keeping only files
+			files_list = [file for file in files_list if os.path.isfile(os.path.join('password_cracked_certs/', file))]
+			list_file = [name[:-4]   for name in files_list]
+
 			# Start 2 threads
 			threads = []
 			for hash_name in all_hashes:
@@ -158,18 +163,13 @@ def run():
 				print('\n', item[0], '\t', item[1])
 			print('\n\n')
 			number_of_successful_cracks = number_of_successful_cracks + len(cracked_hashes)
-			print("nos =", number_of_unique_files)
-			print("ch =", len(cracked_hashes))
-
+			
 			### 
 			### Verification stage
 			###
 			
 			# Read names of all files and directories inside 'password_cracked_certs/' into a list
-			files_list = os.listdir('password_cracked_certs/')
-			# Filter out directories, keeping only files
-			files_list = [file for file in files_list if os.path.isfile(os.path.join('password_cracked_certs/', file))]
-			list_file = [name[:-4]   for name in files_list]
+			
 			for item in cracked_hashes:
 				print("crack hash =", item)
 				file_hash = item[0]
@@ -205,7 +205,7 @@ def run():
 			for item in verified_hashes:
 				print('\n', item[0], '\t', item[1])
 
-
+			curr_pass_len = len(current_passwords)
 			print(f"\n{len(cracked_hashes)} ====>>> {len(verified_hashes)}\n")
 
 	return render_template('results.html', number_of_successful_cracks=number_of_successful_cracks, 
@@ -218,7 +218,8 @@ def run():
 			number_of_self_signed=number_of_self_signed,
 			limit=limit,
 			commonPasswords=commonPasswords,
-			current_passwords = current_passwords
+			current_passwords=current_passwords,
+			curr_pass_len=curr_pass_len
 			)
 
 
