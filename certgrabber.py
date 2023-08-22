@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_cer
 
 with open("commonPasswords.json", 'r') as json_file:
         commonPasswords = json.load(json_file)
+	
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
@@ -31,10 +32,10 @@ def run():
 		dict = request.form.get('dict')
 		search_term = request.form.get('searchterm')
 
-		global number_of_unique_files
-		global number_of_successful_cracks
-		global number_of_good_results
-		global commonPasswords
+		number_of_unique_files = 0
+		number_of_successful_cracks = 0
+		number_of_good_results = 0
+		current_passwords = 0
 
 		####
 		#### DOWNLOADING STAGE 
@@ -50,6 +51,12 @@ def run():
 		if not isExist:
 			os.makedirs('cracked_certs/')
 			print("Directory cracked_certs/ created")
+
+		isExist = os.path.exists('password_cracked_certs/')
+		if not isExist:
+			os.makedirs('password_cracked_certs/')
+			print("Directory password_cracked_certs/ created")
+
 		try:
 			with open("api_key.txt", "r") as f:
 				api_key = f.readline().strip()  # read the first line and strip any leading/trailing whitespaces
@@ -68,6 +75,7 @@ def run():
 			"keywords" : f"{search_term}"
 		}
 
+		current_passwords = {}
 		test = certApiSearch(limit)
 		search = test.grayhatwarfare(api_key, search_terms_dict)
 		print("Search record limit = " + str(search['query']['limit']))
@@ -105,6 +113,7 @@ def run():
 
 		progress_bar.close()
 		number_of_unique_files = number_of_unique_files + len(all_hashes)
+		print("nou =", number_of_unique_files)
 
 		time.sleep(2)
 		### 
@@ -115,13 +124,13 @@ def run():
 
 		if dict == '1':
 			dictionary = "./common_roots.txt"
-			dict_length = 4727
+			dict_length = '4727'
 		elif dict == '2': 
 			dictionary = "./rockyouSlim.txt"
-			dict_length = 30000
+			dict_length = '30000'
 		else:
 			dictionary = "./common_roots.txt"
-			dict_length = 4727
+			dict_length = '4727'
 
 		if crack != None:
 			print("\nMoving on to cracking. . .\n")
@@ -149,27 +158,44 @@ def run():
 				print('\n', item[0], '\t', item[1])
 			print('\n\n')
 			number_of_successful_cracks = number_of_successful_cracks + len(cracked_hashes)
+			print("nos =", number_of_unique_files)
+			print("ch =", len(cracked_hashes))
 
 			### 
 			### Verification stage
 			###
+			
+			# Read names of all files and directories inside 'password_cracked_certs/' into a list
+			files_list = os.listdir('password_cracked_certs/')
+			# Filter out directories, keeping only files
+			files_list = [file for file in files_list if os.path.isfile(os.path.join('password_cracked_certs/', file))]
+			list_file = [name[:-4]   for name in files_list]
 			for item in cracked_hashes:
+				print("crack hash =", item)
 				file_hash = item[0]
 				if item[1] == 'PKCS12 has no password.':
-					pfx_password=None
+					pfx_password="No Password"
 				else:
 					pfx_password = item[1]
-					if pfx_password not in commonPasswords:
-						commonPasswords[pfx_password] = 1
-					else:
+
+				if pfx_password not in commonPasswords:
+					commonPasswords[pfx_password] = 1
+				else:
+					if file_hash[4:] not in list_file:
 						commonPasswords[pfx_password] +=1
-				
+				if file_hash[4:] not in list_file:
+					if pfx_password not in current_passwords:
+						current_passwords[pfx_password] = 1
+					else:
+						current_passwords[pfx_password] +=1
+
 				if check_pfx_contents(file_hash, pfx_password):
 					print(f'{file_hash} is GOOD!\n')
 					verified_hashes.append((file_hash, item[1]))
 					shutil.copy(file_hash, 'cracked_certs/'+file_hash[4:]+'.pfx')
 				else:
 					print(f'{file_hash} is BAD!\n')
+				shutil.copy(file_hash, 'password_cracked_certs/'+file_hash[4:]+'.pfx')
 
 			with open("commonPasswords.json", 'w') as json_file:
 				json.dump(commonPasswords, json_file, indent=4)
@@ -191,7 +217,8 @@ def run():
 			number_of_no_cert=number_of_no_cert,
 			number_of_self_signed=number_of_self_signed,
 			limit=limit,
-			commonPasswords=commonPasswords
+			commonPasswords=commonPasswords,
+			current_passwords = current_passwords
 			)
 
 
@@ -216,7 +243,9 @@ def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file, dict_leng
 	result = subprocess.run([verifypfx_path, filepath, common_roots_file, dict_length], stdout=subprocess.PIPE, text=True)
 	#print(f"File {filepath} processed.")
 	if result.stdout.strip():
-		cracked_hashes.append((filepath, result.stdout.strip()))
+		if (filepath, result.stdout.strip()) not in cracked_hashes:
+			cracked_hashes.append((filepath, result.stdout.strip()))
+			print("added ", filepath)
 
 def download_file(filename, url):
 	"""Download an URL to a file"""
