@@ -82,6 +82,35 @@
             <h3>Most Common Passwords (All time)</h3>
             <canvas id="passwordsChart" style="width:100%;max-height:400px"></canvas>
         </div>
+
+        {% if number_of_successful_cracks > 0 %}
+        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
+            <h3>Certificates and Passwords</h3>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Certificate Hash</th>
+                        <th>Password</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in cracked_hashes %}
+                    <tr>
+                        <td>{{ item[0][4:] }}</td>
+                        <td>
+                            {% if item == "PKCS12 has no password" %}
+                                No Password
+                            {% else %}
+                                {{ item[1] }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}  
+                </tbody>
+              </table>
+        </div>
+        {% endif %}
     </div>
 
 
@@ -115,6 +144,7 @@
     var number_of_no_cert = {{ number_of_no_cert }};
     var number_of_self_signed = {{ number_of_self_signed }};
     var multiple_issues_count = {{ multiple_issues_count }};
+    var cracked_hashes = {{ cracked_hashes | safe }};
     var limit = {{ limit }};
 
     var passwords_dict = {{ commonPasswords | tojson | safe }};
@@ -137,7 +167,7 @@
     for (let i = 0; i < current_d_passwords.length; ++i) {
         allCurPassData.push({
             pass: current_d_passwords[i],
-            count: cur[i]
+            count: current_counts[i]
     });
     }
     // Sort them by the data value
@@ -192,14 +222,15 @@
     var ctx2 = document.getElementById('workingCrackedPie').getContext('2d');
     var cracked2 = {
         datasets: [{
-            data: [number_of_good_results, number_of_out_of_date, number_of_no_private_key, number_of_no_cert, number_of_self_signed, multiple_issues_count],
+            data: [number_of_good_results, number_of_out_of_date, number_of_no_private_key, number_of_no_cert, number_of_self_signed, multiple_issues_count, number_of_invalid],
             backgroundColor: [
                 'rgba(58, 219, 18, 0.6)',   // Color for successful cracks
                 'rgba(179, 152, 2, 0.6)',
                 'rgba(139, 204, 232, 0.6)',
                 'rgba(250, 106, 22, 0.6)',
                 'rgba(250, 22, 239, 0.6)', 
-                'rgba(255, 0, 0, 0.6)',    // Color for unique files
+                'rgba(255, 0, 0, 0.6)',  
+                'rgba(0, 0, 139, 0.6)',  // Color for unique files
             ]
         }],
 
@@ -210,7 +241,8 @@
             'No Private Key',
             'No Certs',
             'Self Signed',
-            'Multiple Issues'
+            'Multiple Issues',
+            'Invalid Certificate'
         ]
     };
     var workingCrackedPie = new Chart(ctx2, {

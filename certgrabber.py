@@ -219,7 +219,8 @@ def run():
 			limit=limit,
 			commonPasswords=commonPasswords,
 			current_passwords=current_passwords,
-			curr_pass_len=curr_pass_len
+			curr_pass_len=curr_pass_len,
+			cracked_hashes=cracked_hashes
 			)
 
 
@@ -361,58 +362,41 @@ def check_pfx_contents(pfx_path, pfx_password):
 		return False
 
 	# Initialize the variable to track issues
-	multiple_issues = False
+	multiple_issues = []
+	multiple_issues.clear()
 	returnVal = True
 
 	# Check for private key
 	if not private_key:
-		multiple_issues = True
+		multiple_issues.append("no_private_key")
 		returnVal = False
-	else:
 		# Check for main certificate
-		if not certificate:
-			multiple_issues = True
-			returnVal = False
-		
-		# Check if it is in date
-		elif not is_certificate_indate(certificate):
-			multiple_issues = True
-			returnVal = False
-		
-		# Check if it is self-signed (no additional certs)
-		elif certificate.issuer == certificate.subject:
-			multiple_issues = True
-			returnVal = False
-		
-		# Check if it is issued by a trustworthy CA
-		'''
-		all_certs = additional_certificates
-		all_certs.append(certificate)
-		trusted_issuers = ["DigiCert", "GlobalSign", "Let's Encrypt", ...]
-		trusted = any(trusted_issuer.lower() in cert.issuer.rfc4514_string().lower() for trusted_issuer in trusted_issuers)
-		if not trusted:
-			multiple_issues = True
-			returnVal = False
-		'''
+	if not certificate:
+		multiple_issues.append("no_cert")
+		returnVal = False
+	
+	# Check if it is in date
+	if not is_certificate_indate(certificate):
+		multiple_issues.append("out_of_date")
+		returnVal = False
+	
+	# Check if it is self-signed (no additional certs)
+	if certificate.issuer == certificate.subject:
+		multiple_issues.append("self_signed")
+		returnVal = False
 
-	if not multiple_issues:
-		# Increment appropriate variables
-		if not private_key:
-			number_of_no_private_key += 1
-		if not certificate:
-			number_of_no_cert += 1
-		if not is_certificate_indate(certificate):
-			number_of_out_of_date += 1
-		if certificate.issuer == certificate.subject:
-			number_of_self_signed += 1
-	else:
+	if len(multiple_issues) > 1:
 		multiple_issues_count += 1
+	else:
+		if "no_private_key" in multiple_issues:
+			number_of_no_private_key += 1
+		if "no_cert" in multiple_issues:
+			number_of_no_cert += 1
+		if "out_of_date" in multiple_issues:
+			number_of_out_of_date += 1
+		if "self_signed" in multiple_issues:
+			number_of_self_signed += 1
 
-		# Check if it is issued by a trustworthy CA
-		'''
-		if trusted:
-			# Increment appropriate variable
-		'''
 
 	if returnVal == False:
 		return False
