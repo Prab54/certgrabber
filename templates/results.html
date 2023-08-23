@@ -114,6 +114,7 @@
     var number_of_no_private_key = {{ number_of_no_private_key }};
     var number_of_no_cert = {{ number_of_no_cert }};
     var number_of_self_signed = {{ number_of_self_signed }};
+    var multiple_issues_count = {{ multiple_issues_count }};
     var limit = {{ limit }};
 
     var passwords_dict = {{ commonPasswords | tojson | safe }};
@@ -191,13 +192,14 @@
     var ctx2 = document.getElementById('workingCrackedPie').getContext('2d');
     var cracked2 = {
         datasets: [{
-            data: [number_of_good_results, number_of_out_of_date, number_of_no_private_key, number_of_no_cert, number_of_self_signed],
+            data: [number_of_good_results, number_of_out_of_date, number_of_no_private_key, number_of_no_cert, number_of_self_signed, multiple_issues_count],
             backgroundColor: [
                 'rgba(58, 219, 18, 0.6)',   // Color for successful cracks
                 'rgba(179, 152, 2, 0.6)',
                 'rgba(139, 204, 232, 0.6)',
                 'rgba(250, 106, 22, 0.6)',
-                'rgba(250, 22, 239, 0.6)',    // Color for unique files
+                'rgba(250, 22, 239, 0.6)', 
+                'rgba(255, 0, 0, 0.6)',    // Color for unique files
             ]
         }],
 
@@ -207,7 +209,8 @@
             'Out of Date',
             'No Private Key',
             'No Certs',
-            'Self Signed'
+            'Self Signed',
+            'Multiple Issues'
         ]
     };
     var workingCrackedPie = new Chart(ctx2, {
@@ -221,6 +224,7 @@
     var passwordsData = {
         labels: sortedPasswords,
         datasets: [{
+            label: 'Occurrences',
             data: sortedCounts,
             backgroundColor: backgroundColors,
             borderColor: borderColors,

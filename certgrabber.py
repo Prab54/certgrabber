@@ -171,7 +171,6 @@ def run():
 			# Read names of all files and directories inside 'password_cracked_certs/' into a list
 			
 			for item in cracked_hashes:
-				print("crack hash =", item)
 				file_hash = item[0]
 				if item[1] == 'PKCS12 has no password.':
 					pfx_password="No Password"
@@ -216,6 +215,7 @@ def run():
 			number_of_no_private_key=number_of_no_private_key,
 			number_of_no_cert=number_of_no_cert,
 			number_of_self_signed=number_of_self_signed,
+			multiple_issues_count=multiple_issues_count,
 			limit=limit,
 			commonPasswords=commonPasswords,
 			current_passwords=current_passwords,
@@ -238,6 +238,7 @@ number_of_no_private_key = 0
 number_of_no_cert = 0
 number_of_self_signed = 0
 number_of_good_results = 0
+multiple_issues_count = 0
 
 def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file, dict_length):
 	#print(f"Attempting to crack {filepath}.")
@@ -246,7 +247,6 @@ def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file, dict_leng
 	if result.stdout.strip():
 		if (filepath, result.stdout.strip()) not in cracked_hashes:
 			cracked_hashes.append((filepath, result.stdout.strip()))
-			print("added ", filepath)
 
 def download_file(filename, url):
 	"""Download an URL to a file"""
@@ -337,6 +337,7 @@ def check_pfx_contents(pfx_path, pfx_password):
 	global number_of_no_private_key
 	global number_of_no_cert
 	global number_of_self_signed
+	global multiple_issues_count
 	# Load the PFX (PKCS#12) file
 	
 	with open(pfx_path, 'rb') as pfx_file:
@@ -359,46 +360,67 @@ def check_pfx_contents(pfx_path, pfx_password):
 		number_of_invalid = number_of_invalid + 1
 		return False
 
+	# Initialize the variable to track issues
+	multiple_issues = False
+	returnVal = True
 
 	# Check for private key
-	print(pfx_path[4:9]+':  ',private_key)
 	if not private_key:
-		number_of_no_private_key = number_of_no_private_key + 1
-		return False
-	
-	# Check for main certificate
-	print(pfx_path[4:9]+':  ',certificate)
-	if not certificate:
-		number_of_no_cert = number_of_no_cert + 1
-		return False
-	
-	# Check it is in date
-	print(pfx_path[4:9]+':  ', certificate.not_valid_before, certificate.not_valid_after)
-	if not is_certificate_indate(certificate):
-		number_of_out_of_date = number_of_out_of_date + 1
+		multiple_issues = True
+		returnVal = False
+	else:
+		# Check for main certificate
+		if not certificate:
+			multiple_issues = True
+			returnVal = False
+		
+		# Check if it is in date
+		elif not is_certificate_indate(certificate):
+			multiple_issues = True
+			returnVal = False
+		
+		# Check if it is self-signed (no additional certs)
+		elif certificate.issuer == certificate.subject:
+			multiple_issues = True
+			returnVal = False
+		
+		# Check if it is issued by a trustworthy CA
+		'''
+		all_certs = additional_certificates
+		all_certs.append(certificate)
+		trusted_issuers = ["DigiCert", "GlobalSign", "Let's Encrypt", ...]
+		trusted = any(trusted_issuer.lower() in cert.issuer.rfc4514_string().lower() for trusted_issuer in trusted_issuers)
+		if not trusted:
+			multiple_issues = True
+			returnVal = False
+		'''
+
+	if not multiple_issues:
+		# Increment appropriate variables
+		if not private_key:
+			number_of_no_private_key += 1
+		if not certificate:
+			number_of_no_cert += 1
+		if not is_certificate_indate(certificate):
+			number_of_out_of_date += 1
+		if certificate.issuer == certificate.subject:
+			number_of_self_signed += 1
+	else:
+		multiple_issues_count += 1
+
+		# Check if it is issued by a trustworthy CA
+		'''
+		if trusted:
+			# Increment appropriate variable
+		'''
+
+	if returnVal == False:
 		return False
 
-	# Check if it is issued by a trustworthy CA
-	'''
-	all_certs = additional_certificates
-	all_certs.append(certificate)
-	trusted_issuers = ["DigiCert", "GlobalSign", "Let's Encrypt", "Comodo", "GoDaddy", "Symantec", "GeoTrust", "Certum", "VeriSign", "Sectigo", "DST", "Entrust", "GTS", "Hotspot", "ISRG", "QuoVadis", "Trustwave", "SECOM", "Starfield", "StartCom", "Thawte"]
-	for cert in all_certs:
-		issuer_name = cert.issuer.rfc4514_string()
-		if any(trusted_issuer.lower() in issuer_name.lower() for trusted_issuer in trusted_issuers):
-			break
-		else:
-			continue
-	'''
-	# Check if it is self-signed (no additional certs)
-	if certificate.issuer == certificate.subject:
-		number_of_self_signed = number_of_self_signed + 1
-		return False
-	
 	with open(f"cracked_certs/{pfx_path[4:9]}_report.txt", 'w') as f:
 		f.write(f"Name: {pfx_path[4:]}.pfx\nPassword: {pfx_password}\n\nPrivate Key:\n{private_key}\n\nCertificate(s):\n{certificate}\n{additional_certificates}\n\nDates:\n{certificate.not_valid_before} to {certificate.not_valid_after}")
 	
-	return True
+	return returnVal
 
   
 		
