@@ -8,65 +8,69 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define listlength 4727
 #define wordslength 21
 
-char **getwords (FILE *fp, int *n);
-void free_array (char** words, int rows);
+char **getwords (FILE *fp, int *n, int listlength);
 
+void free_array (char** words, int rows);
 
 int main(int argc, char *argv[])
 {
-        int i = 0;
-        int nwords = 0;
-        int loop_max = 50;
-        char **words = NULL;  /* file given as argv[1] (default dictionary.txt) */
-        char *fname = argc > 1 ? argv[2] : "dictionary.txt";
-        FILE *dictionary = fopen (fname, "r");
-    
-        if (!dictionary) { /* validate file open */
-                fprintf (stderr, "error: file open failed.\n");
-                return 1;
-        }
+    int i = 0;
+    int nwords = 0;
+    char **words = NULL;
+    int listlength;  // Create a new variable for listlength
 
-        if (!(words = getwords (dictionary, &nwords))) {
-                fprintf (stderr, "error: getwords returned NULL.\n");
-                return 1;
-        }
-        fclose(dictionary);
+    if (argc < 4) {  // Validate number of command-line arguments
+        fprintf(stderr, "Usage: %s <pfx file> <dictionary file> <listlength>\n", argv[0]);
+        return 1;
+    }
 
+    listlength = atoi(argv[3]);  // Convert the 3rd argument to an integer
 
-//      char *passes[] = {"Geek", "Geeks", "Geekfor","122015","test"};
-//        const char *password = argv[2];
-        PKCS12 *p12;
-        // Load the pfx file.
+    char *fname = argv[2];
+    FILE *dictionary = fopen (fname, "r");
 
-        FILE *fp = fopen(argv[1], "rb");
-        if( fp == NULL ) { perror("fopen"); return 1; }
-        p12 = d2i_PKCS12_fp(fp, NULL);
-        fclose(fp);
+    if (!dictionary) { 
+        fprintf (stderr, "error: file open failed.\n");
+        return 1;
+    }
 
-        OpenSSL_add_all_algorithms();
-        ERR_load_PKCS12_strings();
+    if (!(words = getwords (dictionary, &nwords, listlength))) {
+        fprintf (stderr, "error: getwords returned NULL.\n");
+        return 1;
+    }
+    fclose(dictionary);
 
-        if( p12 == NULL ) { ERR_print_errors_fp(stderr); exit(1); }
+    PKCS12 *p12;
+    FILE *fp = fopen(argv[1], "rb");
+    if( fp == NULL ) { perror("fopen"); return 1; }
+    p12 = d2i_PKCS12_fp(fp, NULL);
+    fclose(fp);
 
-        // Note:  No password is not the same as zero-length password.  Check for both.
-        if( PKCS12_verify_mac(p12, NULL, 0) )
+    OpenSSL_add_all_algorithms();
+    ERR_load_PKCS12_strings();
+
+    if( p12 == NULL ) { ERR_print_errors_fp(stderr); exit(1); }
+
+    if( PKCS12_verify_mac(p12, NULL, 0) )
+    {
+        printf("PKCS12 has no password.\n");
+    }
+
+    for(i = 0; i < listlength; i++) { 
+        if( PKCS12_verify_mac(p12, words[i], -1) )
         {
-                printf("PKCS12 has no password.\n");
+            printf("%s",words[i]);
+            i = listlength;
         }
+    }
 
-        for(i = 0; i < listlength; i++) { 
-                if( PKCS12_verify_mac(p12, words[i], -1) )
-                {
-                        printf("%s",words[i]);
-                        i = listlength;
-                }
-        }
-
-        return 0;
+    return 0;
 }
+
+// Rest of the code remains unchanged...
+
 
 
 char *my_strdup(const char *s) {
@@ -82,7 +86,7 @@ char *my_strdup(const char *s) {
  * success, NULL otherwise, 'n' updated with 
  * number of words read.
  */
-char **getwords (FILE *fp, int *n) {
+char **getwords (FILE *fp, int *n, int listlength) {
 
     char **words = NULL;
     char buf[wordslength + 1] = {0};

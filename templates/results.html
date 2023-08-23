@@ -1,0 +1,310 @@
+<html>
+
+<head>
+    <title>Certgrabber</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"
+        integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" type="image/png" href="/static/fav.png">
+    <style>
+        .bt-button {
+            background-color: #5514B4;
+            color: #FFFFFF;
+        }
+
+        .bt-button-outline {
+            background-color: transparent;
+            color: #5514B4;
+            border-color: #5514B4;
+        }
+
+        .bt-button-outline:hover {
+            background-color: #5514B4;
+            color: #FFFFFF;
+        }
+
+        .bt-button:hover {
+            background-color: #FFFFFF;
+            color: #5514B4;
+        }
+
+        .bt-color {
+            color: #5514B4
+        }
+
+        .bt-checkbox .form-check-input:checked {
+            background-color: #5514B4;
+            border-color: #FFFFFF;
+        }
+
+        .bt-active {
+            background-color: #5514B4
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar" style="background-color: #5514B4;">
+        <div class="container-fluid">
+            <a class="navbar-brand text-white" href="/">
+                <img src="/static/BT_logo_2019.svg" alt="Logo" height="40" class="d-inline-block me-3 ms-3"
+                    style="fill: white;">
+                Certgrabber
+            </a>
+        </div>
+    </nav>
+    {% if number_of_good_results > 0 %}
+    <div class="container mt-3">
+        <div class="alert alert-success" role="alert">View cracked certs and reports at <strong>/cracked_certs</strong>
+        </div>
+    </div>
+    {% endif %}
+    <div class="container mt-4">
+        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
+            <h3>Successful Cracks of Unique Certs ({{ number_of_unique_files }})</h3>
+            <canvas id="crackedPie" style="width:100%;max-height:400px"></canvas>
+        </div>
+        {% if number_of_successful_cracks > 0 %}
+        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
+            <h3 class="mb-3">Working Cracked Certs ({{ number_of_successful_cracks }})</h3>
+            <canvas id="workingCrackedPie" style="width:100%;max-height:400px"></canvas>
+        </div>
+        {% endif %}
+        {% if  curr_pass_len > 0 %}
+        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
+            <h3>Current Downloads Passwords</h3>
+            <canvas id="currentPasswordsChart" style="width:100%;max-height:400px"></canvas>
+        </div>
+        {% endif %}
+        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
+            <h3>Most Common Passwords (All time)</h3>
+            <canvas id="passwordsChart" style="width:100%;max-height:400px"></canvas>
+        </div>
+
+        {% if number_of_successful_cracks > 0 %}
+        <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3 mt-4">
+            <h3>Certificates and Passwords</h3>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Certificate Hash</th>
+                        <th>Password</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in cracked_hashes %}
+                    <tr>
+                        <td>{{ item[0][4:] }}</td>
+                        <td>
+                            {% if item == "PKCS12 has no password" %}
+                                No Password
+                            {% else %}
+                                {{ item[1] }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}  
+                </tbody>
+              </table>
+        </div>
+        {% endif %}
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"
+        integrity="sha384-fbbOQedDUMZZ5KreZpsbe1LCZPVmfTnH7ois6mU1QK+m14rQ1l2bGBq41eYeM/fS"
+        crossorigin="anonymous"></script>
+</body>
+
+<div class="container">
+    <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+        <div class="col-md-4 d-flex align-items-center">
+            <a href="/" class="mb-3 me-2 mb-md-0 text-muted text-decoration-none lh-1">
+                <img src="/static/BT_logo_2019_coloured.svg" height="40px"></img>
+            </a>
+            <span class="mb-3 mb-md-0 text-muted ms-3">Certgrabber, based on code from @bingohighway, modified by
+                clueless interns at BT. 💩</span>
+        </div>
+    </footer>
+</div>
+
+<script>
+    var number_of_successful_cracks = {{ number_of_successful_cracks }};
+    var number_of_unique_files = {{ number_of_unique_files }};
+    var number_of_good_results = {{ number_of_good_results }};
+    var number_of_invalid = {{ number_of_invalid }};
+    var number_of_out_of_date = {{ number_of_out_of_date }};
+    var number_of_no_private_key = {{ number_of_no_private_key }};
+    var number_of_no_cert = {{ number_of_no_cert }};
+    var number_of_self_signed = {{ number_of_self_signed }};
+    var multiple_issues_count = {{ multiple_issues_count }};
+    var cracked_hashes = {{ cracked_hashes | safe }};
+    var limit = {{ limit }};
+
+    var passwords_dict = {{ commonPasswords | tojson | safe }};
+    var passwords = Object.keys(passwords_dict);
+    var counts = Object.values(passwords_dict);
+
+    var current_passwords_dict = {{ current_passwords | tojson | safe }};
+    var current_d_passwords = Object.keys(current_passwords_dict);
+    var current_counts = Object.values(current_passwords_dict);
+    var curr_pass_len = {{ curr_pass_len }}
+
+    var allPassData = [];
+    var allCurPassData = [];
+    for (let i = 0; i < passwords.length; ++i) {
+        allPassData.push({
+            pass: passwords[i],
+            count: counts[i]
+    });
+    }
+    for (let i = 0; i < current_d_passwords.length; ++i) {
+        allCurPassData.push({
+            pass: current_d_passwords[i],
+            count: current_counts[i]
+    });
+    }
+    // Sort them by the data value
+    allPassData.sort((a, b) => a.count - b.count);
+    allCurPassData.sort((a, b) => a.count - b.count);
+
+    // And split them again
+    var sortedPasswords = allPassData.map(e => e.pass);
+    var sortedCounts = allPassData.map(e => e.count);
+    var sortedCurPasswords = allCurPassData.map(e => e.pass);
+    var sortedCurCounts = allCurPassData.map(e => e.count);
+
+    console.log(sortedPasswords);   // ["B", "A", "D", "C"] 
+    console.log(sortedCounts);
+    console.log(sortedCurPasswords);   // ["B", "A", "D", "C"] 
+    console.log(sortedCurCounts);
+
+
+    function getRandomColor() {
+        const r = Math.floor(Math.random() * 256);
+        const g = Math.floor(Math.random() * 256);
+        const b = Math.floor(Math.random() * 256);
+        return `rgba(${r},${g},${b}, 0.6)`;   // Added opacity here for consistency with your code
+    }
+
+
+    var ctx = document.getElementById('crackedPie').getContext('2d');
+
+    var cracked = {
+        datasets: [{
+            data: [number_of_successful_cracks, number_of_unique_files - number_of_successful_cracks],
+            backgroundColor: [
+                'rgba(58, 219, 18, 0.6)',   // Color for successful cracks
+                'rgba(179, 8, 2, 0.6)'    // Color for unique files
+            ]
+        }],
+
+        // These labels appear in the legend and in the tooltips when hovering different arcs
+        labels: [
+            'Successful Cracks',
+            'Unsuccesssful Cracks'
+        ]
+    };
+
+    var crackedPie = new Chart(ctx, {
+        type: 'pie',
+        data: cracked
+    });
+
+
+
+    var ctx2 = document.getElementById('workingCrackedPie').getContext('2d');
+    var cracked2 = {
+        datasets: [{
+            data: [number_of_good_results, number_of_out_of_date, number_of_no_private_key, number_of_no_cert, number_of_self_signed, multiple_issues_count, number_of_invalid],
+            backgroundColor: [
+                'rgba(58, 219, 18, 0.6)',   // Color for successful cracks
+                'rgba(179, 152, 2, 0.6)',
+                'rgba(139, 204, 232, 0.6)',
+                'rgba(250, 106, 22, 0.6)',
+                'rgba(250, 22, 239, 0.6)', 
+                'rgba(255, 0, 0, 0.6)',  
+                'rgba(0, 0, 139, 0.6)',  // Color for unique files
+            ]
+        }],
+
+        // These labels appear in the legend and in the tooltips when hovering different arcs
+        labels: [
+            'Good',
+            'Out of Date',
+            'No Private Key',
+            'No Certs',
+            'Self Signed',
+            'Multiple Issues',
+            'Invalid Certificate'
+        ]
+    };
+    var workingCrackedPie = new Chart(ctx2, {
+        type: 'pie',
+        data: cracked2
+    });
+
+    var ctx3 = document.getElementById('passwordsChart').getContext('2d');
+    var backgroundColors = counts.map(() => getRandomColor());
+    var borderColors = backgroundColors.map(color => color.replace("0.6", "1")); // Make borders opaque
+    var passwordsData = {
+        labels: sortedPasswords,
+        datasets: [{
+            label: 'Occurrences',
+            data: sortedCounts,
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
+            borderWidth: 1
+        }]
+    };
+
+    var passwordsChart = new Chart(ctx3, {
+        type: 'bar',   // You can use 'bar' or 'line' or any other type
+        data: passwordsData,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+
+    var ctx4 = document.getElementById('currentPasswordsChart').getContext('2d');
+    var backgroundColors = current_counts.map(() => getRandomColor());
+    var borderColors = backgroundColors.map(color => color.replace("0.6", "1")); // Make borders opaque
+    var passwordsData = {
+        labels: sortedCurPasswords,
+        datasets: [{
+            label: 'Occurrences',
+            data: sortedCurCounts,
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
+            borderWidth: 1
+        }]
+    };
+
+    var currentPasswordsChart = new Chart(ctx4, {
+        type: 'bar',   // You can use 'bar' or 'line' or any other type
+        data: passwordsData,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+
+
+</script>
+
+</html>

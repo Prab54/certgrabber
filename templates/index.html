@@ -69,44 +69,68 @@
 
     <div class="container mt-4">
         <div class="p-3 ps-5 pe-5 bg-body-tertiary border rounded-3">
-        <form id="search" action="/run" method="POST">
-            <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade show active" id="manual" role="tabpanel" aria-labelledby="manual-tab"
-                    tabindex="0">
-                    <div class="row mt-4">
-                        <div class="col">
-                            <label for="apikey" class="form-label">API Key</label>
-                            <input type="text" class="form-control" id="apikey" name="apikey" value='{{apikey}}'
-                                aria-describedby="API key" required>
-                        </div>
-
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="limit" class="form-label">Files Limit</label>
-                                <input type="range" min="1" max="1000" value="50" class="form-range" id="limit"
-                                    name="limit" aria-describedby="Limit" required
-                                    oninput="this.nextElementSibling.value = this.value">
-                                <output>50</output>
-                            </div>
-                        </div>
-
-                        <div class="row">
+            <form id="search" action="/run" method="POST">
+                <div class="tab-content" id="myTabContent">
+                    <div class="tab-pane fade show active" id="manual" role="tabpanel" aria-labelledby="manual-tab"
+                        tabindex="0">
+                        <div class="row mt-4">
                             <div class="col">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
-                                    <label class="form-check-label" for="flexCheckDefault">
-                                        Attempt to crack downloaded certs
-                                    </label>
+                                <label for="searchterm" class="form-label">Search</label>
+                                <input type="text" class="form-control" id="searchterm" name="searchterm"
+                                    placeholder="Search..." aria-describedby="Search Term">
+                            </div>
+                            <div class="col">
+                                <label for="apikey" class="form-label">API Key</label>
+                                <input type="text" class="form-control" id="apikey" name="apikey"
+                                    placeholder="Leave blank to use api key in api_key.txt" aria-describedby="API key">
+                            </div>
+
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="limit" class="form-label">Files Limit</label>
+                                    <input type="range" min="1" max="1000" value="50" class="form-range" id="limit"
+                                        name="limit" aria-describedby="Limit" required
+                                        oninput="this.nextElementSibling.value = this.value">
+                                    <output>50</output>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="True" name="crack"
+                                            id="flexCheckDefault">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            Attempt to crack downloaded certs
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col">
+                                        <select class="form-select mt-3 " id="dropdown" name="dict"
+                                            aria-label="Default select example" style="display:none;" required placeholder="Select a worldlist to crack with:">
+                                            <option value="1" selected>common_roots.txt</option>
+                                            <option value="2" >rockyou.txt</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <button type="button" class="next-btn mt-3 btn bt-button btn-outline-light btn-block">Run</button>
+                <button type="submit" class="mt-3 btn bt-button btn-outline-light btn-block">Run</button>
+                <div id="loadingSpinner"
+                    style="display: none; position: fixed; top: 0; left: 0; height: 100%; width: 100%; background-color: rgba(255,255,255,0.8); z-index: 9999;">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">grabbing</span>
+                        </div>
+                    </div>
+                </div>
 
-        </form>
-    </div>
+            </form>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
@@ -123,9 +147,28 @@
             <a href="/" class="mb-3 me-2 mb-md-0 text-muted text-decoration-none lh-1">
                 <img src="/static/BT_logo_2019_coloured.svg" height="40px"></img>
             </a>
-            <span class="mb-3 mb-md-0 text-muted ms-3">Certgrabber, based on code from @bingohighway, modified by clueless interns at BT. 💩</span>
+            <span class="mb-3 mb-md-0 text-muted ms-3">Certgrabber, based on code from @bingohighway, modified by
+                clueless interns at BT. 💩</span>
         </div>
     </footer>
 </div>
+
+<script>
+    document.getElementById('flexCheckDefault').addEventListener('change', function () {
+        var dropdown = document.getElementById('dropdown');
+        if (this.checked) {
+            dropdown.style.display = 'block';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    });
+</script>
+<script>
+    document.getElementById("search").addEventListener("submit", function () {
+        document.getElementById("loadingSpinner").style.display = "block";
+    });
+</script>
+
+
 
 </html>
