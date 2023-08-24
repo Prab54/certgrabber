@@ -152,15 +152,19 @@ def run():
 
 			# Start 2 threads
 			threads = []
+			x = 0
 			for hash_name in all_hashes:
+				if x == 0:
+					cracked_hashes.clear()
 				if hash_name not in list_file:
 					thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, dictionary, dict_length))
 					threads.append(thread)
 					thread.start()
 					progress_bar_crack.update(0.1)
 				else:
-					cracked_hashes.append(('dls/' + hash_name, file_pwd_pairs[hash_name]))
+					cracked_hashes.append(('dls/' + hash_name, file_pwd_pairs['dls/' + hash_name]))
 					progress_bar_crack.update(1)
+				x+= 1
 			with open('cracked_files.json', 'w') as json_file:
 				json.dump(file_pwd_pairs, json_file, indent=4)
 				
