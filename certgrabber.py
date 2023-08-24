@@ -16,6 +16,8 @@ from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_cer
 with open("commonPasswords.json", 'r') as json_file:
         commonPasswords = json.load(json_file)
 	
+with open('cracked_files.json', 'r') as json_file:
+	file_pwd_pairs = json.load(json_file)
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
@@ -35,6 +37,13 @@ def run():
 		number_of_unique_files = 0
 		number_of_successful_cracks = 0
 		number_of_good_results = 0
+		global number_of_invalid
+		global number_of_out_of_date
+		global number_of_no_private_key
+		global number_of_no_cert
+		global number_of_self_signed
+		global multiple_issues_count
+
 
 		####
 		#### DOWNLOADING STAGE 
@@ -143,11 +152,22 @@ def run():
 
 			# Start 2 threads
 			threads = []
+			x = 0
 			for hash_name in all_hashes:
-				thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, dictionary, dict_length))
-				threads.append(thread)
-				thread.start()
-				progress_bar_crack.update(0.1)
+				if x == 0:
+					cracked_hashes.clear()
+				if hash_name not in list_file:
+					thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, dictionary, dict_length))
+					threads.append(thread)
+					thread.start()
+					progress_bar_crack.update(0.1)
+				else:
+					cracked_hashes.append(('dls/' + hash_name, file_pwd_pairs['dls/' + hash_name]))
+					progress_bar_crack.update(1)
+				x+= 1
+			with open('cracked_files.json', 'w') as json_file:
+				json.dump(file_pwd_pairs, json_file, indent=4)
+				
 
 			progress_bar_crack.set_description("Cracking PFX files (all threads created, cracking...)")
 
@@ -171,6 +191,15 @@ def run():
 			# Read names of all files and directories inside 'password_cracked_certs/' into a list
 			
 			for item in cracked_hashes:
+				if cracked_hashes[0] == item:
+					verified_hashes.clear()
+					number_of_invalid = 0
+					number_of_out_of_date = 0
+					number_of_no_private_key = 0
+					number_of_no_cert = 0
+					number_of_self_signed = 0
+					multiple_issues_count = 0
+
 				file_hash = item[0]
 				if item[1] == 'PKCS12 has no password.':
 					pfx_password="No Password"
@@ -247,7 +276,11 @@ def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file, dict_leng
 	#print(f"File {filepath} processed.")
 	if result.stdout.strip():
 		if (filepath, result.stdout.strip()) not in cracked_hashes:
-			cracked_hashes.append((filepath, result.stdout.strip()))
+			password = result.stdout.strip()
+			cracked_hashes.append((filepath, password))
+			file_pwd_pairs[filepath] = password
+
+
 
 def download_file(filename, url):
 	"""Download an URL to a file"""
@@ -390,11 +423,11 @@ def check_pfx_contents(pfx_path, pfx_password):
 	else:
 		if "no_private_key" in multiple_issues:
 			number_of_no_private_key += 1
-		if "no_cert" in multiple_issues:
+		elif "no_cert" in multiple_issues:
 			number_of_no_cert += 1
-		if "out_of_date" in multiple_issues:
+		elif "out_of_date" in multiple_issues:
 			number_of_out_of_date += 1
-		if "self_signed" in multiple_issues:
+		elif "self_signed" in multiple_issues:
 			number_of_self_signed += 1
 
 
