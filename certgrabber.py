@@ -16,6 +16,8 @@ from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_cer
 with open("commonPasswords.json", 'r') as json_file:
         commonPasswords = json.load(json_file)
 	
+with open('cracked_files.json', 'r') as json_file:
+	file_pwd_pairs = json.load(json_file)
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
@@ -151,10 +153,17 @@ def run():
 			# Start 2 threads
 			threads = []
 			for hash_name in all_hashes:
-				thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, dictionary, dict_length))
-				threads.append(thread)
-				thread.start()
-				progress_bar_crack.update(0.1)
+				if hash_name not in list_file:
+					thread = threading.Thread(target=run_verifypfx_on_file, args=(directory+hash_name, verifypfx_path, dictionary, dict_length))
+					threads.append(thread)
+					thread.start()
+					progress_bar_crack.update(0.1)
+				else:
+					cracked_hashes.append(('dls/' + hash_name, file_pwd_pairs[hash_name]))
+					progress_bar_crack.update(1)
+			with open('cracked_files.json', 'w') as json_file:
+				json.dump(file_pwd_pairs, json_file, indent=4)
+				
 
 			progress_bar_crack.set_description("Cracking PFX files (all threads created, cracking...)")
 
@@ -263,7 +272,11 @@ def run_verifypfx_on_file(filepath, verifypfx_path, common_roots_file, dict_leng
 	#print(f"File {filepath} processed.")
 	if result.stdout.strip():
 		if (filepath, result.stdout.strip()) not in cracked_hashes:
-			cracked_hashes.append((filepath, result.stdout.strip()))
+			password = result.stdout.strip()
+			cracked_hashes.append((filepath, password))
+			file_pwd_pairs[filepath] = password
+
+
 
 def download_file(filename, url):
 	"""Download an URL to a file"""
